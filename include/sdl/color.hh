@@ -1,5 +1,6 @@
 #ifndef _KEDITOR_SDL_COLOR_HH
 #define _KEDITOR_SDL_COLOR_HH
+#include <cmath>
 #include <cstdint>
 #include <stdexcept>
 
@@ -91,6 +92,27 @@ namespace sdl
         to_fcolor() const -> SDL_FColor
         {
             return { r / 255.0F, g / 255.0F, b / 255.0F, a / 255.0F };
+        }
+
+
+        [[nodiscard]]
+        static constexpr auto
+        lerp(Color a, Color b, float t) -> Color
+        {
+            auto lerp8 {
+                [](std::uint8_t a, std::uint8_t b, float t) -> std::uint8_t
+                {
+                    return static_cast<std::uint8_t>(std::lerp(
+                        static_cast<float>(a), static_cast<float>(b), t));
+                }
+            };
+
+            return {
+                lerp8(a.r, b.r, t),
+                lerp8(a.g, b.g, t),
+                lerp8(a.b, b.b, t),
+                lerp8(a.a, b.a, t),
+            };
         }
 
     private:

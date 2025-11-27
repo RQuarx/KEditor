@@ -18,7 +18,7 @@ TextEngine::create(Renderer &render) -> std::optional<TextEngine>
 
 
 auto
-Renderer::create(Window &window, const std::string &device)
+Renderer::create(Window &&window, const std::string &device)
     -> std::optional<Renderer>
 {
     Renderer render;
@@ -28,13 +28,45 @@ Renderer::create(Window &window, const std::string &device)
 
     if (render.m_object == nullptr) return std::nullopt;
 
+    if (!SDL_SetRenderDrawBlendMode(render.m_object, SDL_BLENDMODE_BLEND))
+        return std::nullopt;
+
     auto engine { TextEngine::create(render) };
 
     /* renderer will destroy itself */
     if (!engine) return std::nullopt;
 
-    render.m_engine = std::move(*engine);
+    render.m_engine = std::make_shared<TextEngine>(std::move(*engine));
+    render.m_window = std::move(window);
     return render;
+}
+
+
+auto
+Renderer::get_render_nexts() -> Signal<RenderReturnType, sdl::Renderer &> &
+{
+    return m_render_nexts;
+}
+
+
+auto
+Renderer::get_window() -> sdl::Window &
+{
+    return m_window;
+}
+
+
+auto
+Renderer::run_render_queue() -> RenderReturnType
+{
+    for (auto &slot : m_render_nexts.get_slots())
+    {
+        auto res { slot.slot(*this) };
+
+        if (res == RenderReturnType::FAILURE) return RenderReturnType::FAILURE;
+    }
+
+    return RenderReturnType::SUCCESS;
 }
 
 
@@ -63,14 +95,13 @@ Renderer::present() -> bool
 auto
 Renderer::render_area(sdl::FRect &area, bool fill) -> bool
 {
-    if (fill)
-        return SDL_RenderFillRect(m_object, &area);
+    if (fill) return SDL_RenderFillRect(m_object, &area);
     return SDL_RenderRect(m_object, &area);
 }
 
 
 auto
-Renderer::get_text_engine() const -> const TextEngine &
+Renderer::get_text_engine() const -> std::shared_ptr<TextEngine>
 {
     return m_engine;
 }

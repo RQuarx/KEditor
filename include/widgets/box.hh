@@ -20,7 +20,7 @@ namespace widget
 
 
         [[nodiscard]]
-        auto get_area() const noexcept -> sdl::FRect;
+        auto get_area(bool include_border = true) const noexcept -> sdl::FRect;
 
         [[nodiscard]]
         auto get_color() const noexcept -> sdl::Color;
@@ -38,12 +38,17 @@ namespace widget
 
         void set_border_width(unsigned int px);
 
+        [[nodiscard]]
+        auto get_border_width() const -> unsigned int;
+
 
         [[nodiscard]]
         auto is_visible() const noexcept -> bool;
         void set_visible(bool visible);
 
-        virtual auto add_event_callbacks(sdl::EventHandler &handler) -> bool;
+        virtual auto add_event_callbacks(sdl::EventHandler &handler,
+                                         sdl::Renderer     &render) -> bool;
+
         virtual auto render(sdl::Renderer &render) -> bool;
 
     private:

@@ -17,15 +17,22 @@ namespace sdl
 
 
         [[nodiscard]]
-        static auto create(Renderer          &render,
-                           Font              &font,
-                           const std::string &string) -> std::optional<Text>;
+        static auto create(Renderer &render, Font &font, std::string string)
+            -> std::optional<Text>;
 
 
         auto set_color(Color color) -> bool;
 
 
         auto render(FPoint position) -> bool;
+
+
+        [[nodiscard]]
+        auto get_string() const -> std::string;
+        auto set_string(std::string string) -> bool;
+
+    private:
+        std::string m_string;
     };
 }
 

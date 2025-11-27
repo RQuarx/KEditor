@@ -1,0 +1,223 @@
+#ifndef _KEDITOR_SDL_SIGNAL_HH
+#define _KEDITOR_SDL_SIGNAL_HH
+#include <atomic>
+#include <functional>
+#include <list>
+#include <mutex>
+#include <optional>
+
+
+namespace sdl
+{
+    template <typename T_Ret, typename... T_Params> class Signal;
+
+    class Connection
+    {
+    public:
+        using signature = std::function<void()>;
+
+        Connection()                       = default;
+        Connection(const Connection &)     = delete;
+        Connection(Connection &&) noexcept = default;
+
+        auto operator=(const Connection &) -> Connection &     = delete;
+        auto operator=(Connection &&) noexcept -> Connection & = default;
+
+        explicit Connection(signature disconnect_function);
+        ~Connection();
+
+
+        void disconnect();
+
+    private:
+        signature m_disconnect_fn;
+    };
+
+
+    template <typename T_Ret, typename... T_Params> class Signal
+    {
+        struct SlotWrapper
+        {
+            std::function<T_Ret(T_Params...)> slot;
+            std::size_t                       id;
+        };
+
+    public:
+        using slot_type = std::function<T_Ret(T_Params...)>;
+
+
+        Signal() = default;
+        ~Signal() { clear(); }
+
+        Signal(const Signal &)                     = delete;
+        auto operator=(const Signal &) -> Signal & = delete;
+
+
+        Signal(Signal &&other) noexcept
+        {
+            std::scoped_lock lock(other.m_mutex);
+            m_slots   = std::move(other.m_slots);
+            m_enabled = other.m_enabled;
+        }
+
+
+        auto
+        operator=(Signal &&other) noexcept -> Signal &
+        {
+            if (this == &other) return *this;
+
+            std::scoped_lock lock(m_mutex, other.m_mutex);
+            m_slots   = std::move(other.m_slots);
+            m_enabled = other.m_enabled;
+            return *this;
+        }
+
+
+        auto
+        connect(slot_type slot) -> Connection
+        {
+            std::scoped_lock lock(m_mutex);
+
+            size_t id { m_next_id++ };
+            m_slots.emplace_back(slot, id);
+
+            return Connection(
+                [this, id] -> auto
+                {
+                    std::scoped_lock lock { m_mutex };
+                    m_slots.remove_if([id](auto &s) -> auto
+                                      { return s.id == id; });
+                });
+        }
+
+
+        template <typename T_Func, typename... T_FuncParams>
+        auto
+        connect(T_Func &&f, T_FuncParams &&...extra) -> Connection
+        {
+            auto bound_slot { [f = std::forward<T_Func>(f),
+                               extra...](T_Params... params) -> T_Ret
+                              { return f(params..., extra...); } };
+
+            return connect(slot_type { bound_slot });
+        }
+
+
+        template <typename T_Instance,
+                  typename T_Method,
+                  typename... T_MethodParams>
+        auto
+        connect(T_Instance *instance,
+                T_Method  &&mem_func,
+                T_MethodParams &&...extra) -> Connection
+        {
+            auto bound_slot {
+                [instance, mem_func = std::forward<T_Method>(mem_func),
+                 extra...](T_Params... params) -> T_Ret
+                { return (instance->*mem_func)(params..., extra...); }
+            };
+            return connect(slot_type { bound_slot });
+        }
+
+
+        template <typename T_Instance,
+                  typename T_Method,
+                  typename... T_MethodParams>
+        auto
+        connect(const T_Instance *instance,
+                T_Method        &&mem_func,
+                T_MethodParams &&...extra) -> Connection
+        {
+            auto bound_slot {
+                [instance, mem_func = std::forward<T_Method>(mem_func),
+                 extra...](T_Params... params) -> T_Ret
+                { return (instance->*mem_func)(params..., extra...); }
+            };
+
+            return connect(slot_type { bound_slot });
+        }
+
+
+        auto
+        emit(T_Params &&...params) -> std::vector<T_Ret>
+        {
+            std::scoped_lock lock(m_mutex);
+
+            if (!m_enabled) return {};
+
+            std::vector<T_Ret> results;
+            results.reserve(m_slots.size());
+
+            for (auto &slot : m_slots)
+            {
+                results.emplace_back(slot(params...));
+            }
+            return results;
+        }
+
+
+        auto
+        operator()(T_Params &&...params) -> std::vector<T_Ret>
+        {
+            return emit(std::forward<T_Params>(params)...);
+        }
+
+
+        template <typename T_Pred>
+        auto
+        emit_until(T_Pred pred, T_Params... params) -> std::optional<T_Ret>
+        {
+            std::scoped_lock lock(m_mutex);
+
+            if (!m_enabled) return std::nullopt;
+
+            for (auto &slot : m_slots)
+            {
+                T_Ret r { slot(params...) };
+                if (pred(r)) return r;
+            }
+
+            return std::nullopt;
+        }
+
+
+        void
+        clear()
+        {
+            std::scoped_lock lock(m_mutex);
+            m_slots.clear();
+        }
+
+
+        void
+        set_enabled(bool v)
+        {
+            m_enabled = v;
+        }
+
+
+        auto
+        is_enabled() const -> bool
+        {
+            return m_enabled;
+        }
+
+
+        [[nodiscard]]
+        auto
+        get_slots() const -> std::list<SlotWrapper>
+        {
+            return m_slots;
+        }
+
+
+    private:
+        mutable std::mutex       m_mutex;
+        std::list<SlotWrapper>   m_slots;
+        bool                     m_enabled { true };
+        std::atomic<std::size_t> m_next_id { 0 };
+    };
+}
+
+
+#endif /* _KEDITOR_SDL_SIGNAL_HH */

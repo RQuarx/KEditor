@@ -11,6 +11,9 @@ Font::create(std::filesystem::path font_path, float ptsize)
     font.m_object = TTF_OpenFont(font_path.c_str(), ptsize);
 
     if (font.m_object == nullptr) return std::nullopt;
+
+    TTF_SetFontHinting(font.m_object, TTF_HINTING_LIGHT_SUBPIXEL);
+
     font.m_font_path = std::move(font_path);
     return font;
 }

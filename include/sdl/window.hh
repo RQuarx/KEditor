@@ -5,6 +5,7 @@
 
 #include <SDL3/SDL_video.h>
 
+#include "sdl/rect.hh"
 #include "sdl/resource.hh"
 
 
@@ -31,6 +32,10 @@ namespace sdl
 
         [[nodiscard]]
         auto get_size() -> std::optional<WindowSize>;
+
+
+        [[nodiscard]]
+        auto get_logical_cursor_position() -> sdl::FPoint;
     };
 
 }

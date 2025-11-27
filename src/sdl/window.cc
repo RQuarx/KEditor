@@ -1,3 +1,5 @@
+#include <SDL3/SDL_mouse.h>
+
 #include "log.hh"
 #include "sdl/window.hh"
 
@@ -26,4 +28,18 @@ Window::get_size() -> std::optional<WindowSize>
     if (!SDL_GetWindowSizeInPixels(m_object, &size.w, &size.h))
         return std::nullopt;
     return size;
+}
+
+
+auto
+Window::get_logical_cursor_position() -> sdl::FPoint
+{
+    float x;
+    float y;
+    SDL_GetMouseState(&x, &y);
+
+    float scale { SDL_GetWindowDisplayScale(m_object) };
+
+    logger.log<LogLevel::DEBUG>("scale: {}", scale);
+    return { x / scale, y / scale };
 }

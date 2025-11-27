@@ -13,9 +13,12 @@ Box::Box(sdl::FRect                widget_area,
 
 
 auto
-Box::get_area() const noexcept -> sdl::FRect
+Box::get_area(bool include_border) const noexcept -> sdl::FRect
 {
-    return m_area;
+    if (include_border) return m_area;
+    return { m_area.x + m_border_width_px, m_area.y + m_border_width_px,
+             m_area.w - (m_border_width_px * 2),
+             m_area.h - (m_border_width_px * 2) };
 }
 
 
@@ -70,6 +73,13 @@ Box::set_border_width(unsigned int px)
 }
 
 
+auto
+Box::get_border_width() const -> unsigned int
+{
+    return m_border_width_px;
+}
+
+
 [[nodiscard]]
 auto
 Box::is_visible() const noexcept -> bool
@@ -86,7 +96,8 @@ Box::set_visible(bool visible)
 
 
 auto
-Box::add_event_callbacks(sdl::EventHandler & /* handler */) -> bool
+Box::add_event_callbacks(sdl::EventHandler & /* handler */,
+                         sdl::Renderer & /* render */) -> bool
 {
     return true;
 }
@@ -95,6 +106,8 @@ Box::add_event_callbacks(sdl::EventHandler & /* handler */) -> bool
 auto
 Box::render(sdl::Renderer &render) -> bool
 {
+    if (!m_visible) return true;
+
     if (!m_border_color)
         return render.set_draw_color(m_color) && render.render_area(m_area);
 

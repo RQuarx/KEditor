@@ -1,4 +1,4 @@
-#include "sdl/event.hh"
+#include "sdl/signal.hh"
 
 using sdl::Connection;
 using sdl::Signal;

@@ -55,6 +55,14 @@ namespace sdl
             return m_object;
         }
 
+
+        [[nodiscard]]
+        auto
+        operator!() const -> bool
+        {
+            return m_object == nullptr;
+        }
+
     protected:
         T_SDLObject *m_object;
     };
