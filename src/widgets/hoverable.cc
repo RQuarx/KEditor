@@ -55,7 +55,7 @@ Hoverable::Hoverable(sdl::FRect                area,
 
 auto
 Hoverable::add_event_callbacks(sdl::EventHandler &handler,
-                               sdl::Renderer & /* sig */) -> bool
+                               sdl::Renderer & /* render */) -> bool
 {
     m_connection = handler.connect(SDL_EVENT_MOUSE_MOTION, this,
                                    &Hoverable::mf_on_mouse_motion);
@@ -70,14 +70,15 @@ Hoverable::render(sdl::Renderer &render) -> bool
     if (!m_fading_out)
     {
         sdl::FRect area { get_area() };
+        sdl::Color color { m_hovered ? m_hovered_color : get_color() };
 
         if (!get_border_color())
-            return render.set_draw_color(get_color()) && render.render_area(area);
+            return render.set_draw_color(color) && render.render_area(area);
 
         sdl::FRect inside_area { get_area(false) };
 
         return render.set_draw_color(*get_border_color())
-            && render.render_area(area, false) && render.set_draw_color(get_color())
+            && render.render_area(area, false) && render.set_draw_color(color)
             && render.render_area(inside_area);
     }
 
@@ -86,11 +87,13 @@ Hoverable::render(sdl::Renderer &render) -> bool
 
 
 auto
-Hoverable::mf_on_mouse_motion(const sdl::Event &event, sdl::Renderer &render)
+Hoverable::mf_on_mouse_motion(const sdl::Event &event,
+                              sdl::Renderer & /* render */)
     -> sdl::EventReturnType
 {
-    bool new_hovered { is_in_bound(
-        get_area(false), render.get_window().get_logical_cursor_position()) };
+    bool new_hovered { is_in_bound(get_area(false),
+                                   { event.motion.x, event.motion.y }) };
+
 
     logger.log<LogLevel::DEBUG>("{}", new_hovered);
     logger.log<LogLevel::DEBUG>("{}, {}", event.motion.x, event.motion.y);
@@ -118,6 +121,8 @@ Hoverable::mf_on_mouse_motion(const sdl::Event &event, sdl::Renderer &render)
 auto
 Hoverable::mf_render_fade(sdl::Renderer &render) -> bool
 {
+    if (!m_fading_out) return true;
+
     std::uint64_t now { SDL_GetTicks() };
     float         delta_time { (now - m_prev_frame_time) / 1000.0F };
 
@@ -144,11 +149,7 @@ Hoverable::mf_render_fade(sdl::Renderer &render) -> bool
 
     m_prev_frame_time = SDL_GetTicks();
 
-    if (t >= 1.0F)
-    {
-        m_fading_out = false;
-        logger.log<LogLevel::DEBUG>("Disconnecting");
-    }
+    if (t >= 1.0F) m_fading_out = false;
 
     return true;
 }

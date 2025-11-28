@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <functional>
 #include <mutex>
+#include <utility>
 
 #include <SDL3/SDL_events.h>
 
@@ -48,6 +49,8 @@ namespace sdl
         {
             std::scoped_lock lock { m_mutex };
 
+            if (e.type == SDL_EVENT_QUIT) return EventReturnType::SUCCESS;
+
             auto it { m_signals.find(e.type) };
             if (it == m_signals.end()) return EventReturnType::CONTINUE;
 
@@ -77,6 +80,8 @@ namespace sdl
             Event e;
             while (SDL_PollEvent(&e))
             {
+                SDL_ConvertEventToRenderCoordinates(render.raw(), &e);
+
                 EventReturnType res { handle_event(e, render) };
 
                 switch (res)

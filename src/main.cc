@@ -51,11 +51,6 @@ main(int argc, char **argv) -> int
     sdl::Renderer     render { create_window_and_renderer() };
     sdl::EventHandler event_handler;
 
-    event_handler.connect(
-        SDL_EVENT_QUIT,
-        [](const sdl::Event &, sdl::Renderer &) -> sdl::EventReturnType
-        { return sdl::EventReturnType::SUCCESS; });
-
     auto text_engine { sdl::TextEngine::create(render) };
     auto font_buf { sdl::Font::create(
         "/usr/share/fonts/MapleMono-NF/MapleMono-NF-Regular.ttf", 25) };

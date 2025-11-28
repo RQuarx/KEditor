@@ -30,6 +30,7 @@ Renderer::create(Window &&window, const std::string &device)
 
     if (!SDL_SetRenderDrawBlendMode(render.m_object, SDL_BLENDMODE_BLEND))
         return std::nullopt;
+    if (!SDL_SetRenderVSync(render.m_object, 1)) return std::nullopt;
 
     auto engine { TextEngine::create(render) };
 

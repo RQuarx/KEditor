@@ -8,8 +8,8 @@ namespace widget
     class Hoverable : public Box
     {
     public:
-        static constexpr std::uint8_t BRIGHTNESS_FACTOR { 10 };
-        static constexpr std::int64_t FADEOUT_TIME_SECOND { 2 };
+        static constexpr std::uint8_t BRIGHTNESS_FACTOR { 50 };
+        static constexpr std::int64_t FADEOUT_TIME_SECOND { 1 };
 
 
         Hoverable(sdl::FRect                area,

@@ -41,5 +41,5 @@ Window::get_logical_cursor_position() -> sdl::FPoint
     float scale { SDL_GetWindowDisplayScale(m_object) };
 
     logger.log<LogLevel::DEBUG>("scale: {}", scale);
-    return { x / scale, y / scale };
+    return { x, y };
 }
