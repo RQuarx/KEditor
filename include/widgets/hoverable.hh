@@ -9,7 +9,7 @@ namespace widget
     {
     public:
         static constexpr std::uint8_t BRIGHTNESS_FACTOR { 50 };
-        static constexpr std::int64_t FADEOUT_TIME_SECOND { 1 };
+        static constexpr std::int64_t FADEOUT_TIME_MS { 500 };
 
 
         Hoverable(sdl::FRect                area,
@@ -33,9 +33,6 @@ namespace widget
         bool m_fading_out;
 
         float m_fade_elapsed;
-
-
-        sdl::Connection m_connection;
 
     protected:
         auto mf_on_mouse_motion(const sdl::Event &event, sdl::Renderer &render)

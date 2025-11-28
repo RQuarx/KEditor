@@ -1,6 +1,5 @@
 #include <algorithm>
 
-#include "log.hh"
 #include "widgets/hoverable.hh"
 
 using widget::Hoverable;
@@ -16,7 +15,6 @@ namespace
         color.r = std::clamp(color.r + brightness_factor, 0, 255);
         color.g = std::clamp(color.g + brightness_factor, 0, 255);
         color.b = std::clamp(color.b + brightness_factor, 0, 255);
-        // color.a = std::clamp(color.a + brightness_factor, 0, 255);
 
         return color;
     }
@@ -57,8 +55,8 @@ auto
 Hoverable::add_event_callbacks(sdl::EventHandler &handler,
                                sdl::Renderer & /* render */) -> bool
 {
-    m_connection = handler.connect(SDL_EVENT_MOUSE_MOTION, this,
-                                   &Hoverable::mf_on_mouse_motion);
+    handler.connect(SDL_EVENT_MOUSE_MOTION, this,
+                    &Hoverable::mf_on_mouse_motion);
     return true;
 }
 
@@ -94,24 +92,12 @@ Hoverable::mf_on_mouse_motion(const sdl::Event &event,
     bool new_hovered { is_in_bound(get_area(false),
                                    { event.motion.x, event.motion.y }) };
 
-
-    logger.log<LogLevel::DEBUG>("{}", new_hovered);
-    logger.log<LogLevel::DEBUG>("{}, {}", event.motion.x, event.motion.y);
-    logger.log<LogLevel::DEBUG>("{}", get_area(false));
-
     if (new_hovered != m_hovered)
     {
-        m_hovered = new_hovered;
-
-        if (!m_hovered)
-        {
-            m_fading_out   = true;
-            m_fade_elapsed = 0.0F;
-        }
-        else
-        {
-            m_fading_out = false;
-        }
+        m_hovered         = new_hovered;
+        m_fade_elapsed    = 0.0F;
+        m_fading_out      = !m_hovered;
+        m_prev_frame_time = SDL_GetTicks();
     }
 
     return sdl::EventReturnType::CONTINUE;
@@ -124,10 +110,10 @@ Hoverable::mf_render_fade(sdl::Renderer &render) -> bool
     if (!m_fading_out) return true;
 
     std::uint64_t now { SDL_GetTicks() };
-    float         delta_time { (now - m_prev_frame_time) / 1000.0F };
+    auto          delta_time { static_cast<float>(now - m_prev_frame_time) };
 
     m_fade_elapsed += delta_time;
-    float t { std::min(m_fade_elapsed / FADEOUT_TIME_SECOND, 1.0F) };
+    float t { std::min(m_fade_elapsed / FADEOUT_TIME_MS, 1.0F) };
 
     sdl::Color render_color { sdl::Color::lerp(m_hovered_color, get_color(),
                                                t) };

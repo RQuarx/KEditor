@@ -2,6 +2,7 @@
 #include <cstring>
 #include <iostream>
 
+#include "exceptions.hh"
 #include "log.hh"
 
 
@@ -43,7 +44,7 @@ Logger::set_log_level(std::string_view log_level) -> Logger &
 
         if (std::from_chars(log_level.begin(), log_level.end(), level).ec
             != std::errc {})
-            throw std::exception {};
+            throw kei::InvalidArgument { "" };
 
         if (static_cast<LogLevel>(level) >= LogLevel::MAX)
         {
@@ -87,7 +88,7 @@ Logger::set_log_file(const std::string &log_file) -> Logger &
         log<LogLevel::ERROR>("Failed to open {}: {}", log_file,
                              std::strerror(errno));
 
-        throw std::exception {};
+        throw kei::FilesystemError { "Failed to open log file {}", log_file };
     }
 
     return *this;

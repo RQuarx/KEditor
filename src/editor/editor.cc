@@ -2,15 +2,18 @@
 
 
 auto
-Editor::create(model::PieceTable pt, sdl::TextEngine *engine)
+Editor::create(model::PieceTable pt, sdl::Renderer *render)
     -> std::optional<Editor>
 {
-    if (engine == nullptr) return std::nullopt;
+    if (render == nullptr) return std::nullopt;
 
     Editor editor;
 
     editor.m_buffer = std::move(pt);
-    editor.m_engine = engine;
+    editor.m_render = render;
 
     return editor;
 }
+
+
+

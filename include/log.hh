@@ -62,7 +62,7 @@ public:
      *
      * [note]----------------
      *
-     * Throws std::exception if the file cannot be opened.
+     * Throws kei::FilesystemError if the file cannot be opened.
      *
      * [params]--------------
      *

@@ -1,22 +1,22 @@
 #ifndef _KEDITOR_EDITOR_EDITOR_HH
 #define _KEDITOR_EDITOR_EDITOR_HH
 #include "model/piece_table.hh"
-#include "sdl/text_engine.hh"
+#include "sdl/renderer.hh"
 
 
 class Editor
 {
 public:
     [[nodiscard]]
-    static auto create(model::PieceTable pt, sdl::TextEngine *engine)
+    static auto create(model::PieceTable pt, sdl::Renderer *render)
         -> std::optional<Editor>;
 
 private:
-    model::PieceTable m_buffer;
-    sdl::TextEngine  *m_engine;
+    model::PieceTable m_buffer { "" };
+    sdl::Renderer    *m_render { nullptr };
 
 
-    Editor();
+    Editor() = default;
 };
 
 #endif /* _KEDITOR_EDITOR_EDITOR_HH */

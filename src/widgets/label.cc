@@ -19,7 +19,7 @@ Label::Label(sdl::FPoint                position,
 
     if (!TTF_GetStringSize(m_font->raw(), m_string.c_str(), m_string.length(),
                            &w, &h))
-        throw std::runtime_error("TTF_GetStringSize failed");
+        throw sdl::Exception("TTF_GetStringSize failed");
 
     m_string_size.w = static_cast<float>(w);
     m_string_size.h = static_cast<float>(h);

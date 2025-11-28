@@ -2,9 +2,10 @@
 #define _KEDITOR_SDL_COLOR_HH
 #include <cmath>
 #include <cstdint>
-#include <stdexcept>
 
 #include <SDL3/SDL_pixels.h>
+
+#include "exceptions.hh"
 
 #define COLOR_TO_PARAM(color) \
     (color).r, (color).g, (color).b, (color).a
@@ -133,8 +134,9 @@ namespace sdl
             while (s[actual] != '\0') actual++;
 
             if (actual != len)
-                throw std::invalid_argument(
-                    "Color hex literal has wrong length");
+                throw kei::InvalidArgument {
+                    "Color hex literal has wrong length"
+                };
 
             auto read_byte = [&](int pos) -> std::uint8_t
             {
@@ -142,7 +144,7 @@ namespace sdl
                 int lo { hex_val(s[pos + 1]) };
 
                 if (hi < 0 || lo < 0)
-                    throw std::invalid_argument("Invalid hex digit");
+                    throw kei::InvalidArgument { "Invalid hex digit" };
 
                 return static_cast<std::uint8_t>((hi * 16) + lo);
             };
@@ -174,8 +176,9 @@ static constexpr auto
 operator""_rgb(const char *hex, std::size_t len) -> sdl::Color
 {
     if (len != 6)
-        throw std::invalid_argument(
-            "Hex literals must be 6 characters for _rgb");
+        throw kei::InvalidArgument {
+            "Hex literals must be 6 characters for _rgb"
+        };
 
     return sdl::Color::from_rgb_hex(hex);
 }
@@ -185,8 +188,9 @@ static constexpr auto
 operator""_rgba(const char *hex, std::size_t len) -> sdl::Color
 {
     if (len != 8)
-        throw std::invalid_argument(
-            "Hex literals must be 8 characters for _rgba");
+        throw kei::InvalidArgument {
+            "Hex literals must be 8 characters for _rgba"
+        };
 
     return sdl::Color::from_rgba_hex(hex);
 }
