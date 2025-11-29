@@ -1,6 +1,23 @@
+#include <fstream>
+#include <sstream>
+
+#include "exceptions.hh"
 #include "model/piece_table.hh"
 
 using model::PieceTable;
+
+
+auto
+PieceTable::from_file(const std::string &path) -> PieceTable
+{
+    std::ifstream file { path };
+    if (!file) throw kei::FilesystemError { "Failed to open file {}", path };
+
+    std::ostringstream oss;
+    oss << file.rdbuf();
+
+    return PieceTable { oss.str() };
+}
 
 
 PieceTable::PieceTable(std::string text) : m_original(std::move(text))

@@ -95,28 +95,26 @@ Box::set_visible(bool visible)
 }
 
 
-auto
-Box::add_event_callbacks(sdl::EventHandler & /* handler */,
-                         sdl::Renderer & /* render */) -> bool
+void
+Box::render(sdl::Renderer &render)
 {
-    return true;
-}
-
-
-auto
-Box::render(sdl::Renderer &render) -> bool
-{
-    if (!m_visible) return true;
+    if (!m_visible) return;
 
     if (!m_border_color)
-        return render.set_draw_color(m_color) && render.render_area(m_area);
+    {
+        render.set_draw_color(m_color);
+        render.render_rect(m_area);
+
+        return;
+    }
 
     sdl::FRect inside_rect { m_area.x + m_border_width_px,
                              m_area.y + m_border_width_px,
                              m_area.w - (m_border_width_px * 2),
                              m_area.h - (m_border_width_px * 2) };
 
-    return render.set_draw_color(*m_border_color)
-        && render.render_area(m_area, false) && render.set_draw_color(m_color)
-        && render.render_area(inside_rect);
+    render.set_draw_color(*m_border_color);
+    render.render_rect(m_area, false);
+    render.set_draw_color(m_color);
+    render.render_rect(inside_rect);
 }

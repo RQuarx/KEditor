@@ -17,11 +17,11 @@ namespace widget
                   std::optional<sdl::Color> border_color = std::nullopt);
 
 
-        auto add_event_callbacks(sdl::EventHandler &handler,
-                                 sdl::Renderer     &render) -> bool override;
+        void add_event_callbacks(sdl::EventHandler &handler,
+                                 sdl::Renderer     &render) override;
 
 
-        auto render(sdl::Renderer &render) -> bool override;
+        void render(sdl::Renderer &render) override;
 
     private:
         sdl::Color m_hovered_color;
@@ -39,7 +39,7 @@ namespace widget
             -> sdl::EventReturnType;
 
 
-        auto mf_render_fade(sdl::Renderer &render) -> bool;
+        void mf_render_fade(sdl::Renderer &render);
     };
 }
 

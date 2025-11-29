@@ -51,36 +51,41 @@ Hoverable::Hoverable(sdl::FRect                area,
 }
 
 
-auto
+void
 Hoverable::add_event_callbacks(sdl::EventHandler &handler,
-                               sdl::Renderer & /* render */) -> bool
+                               sdl::Renderer & /* render */)
 {
     handler.connect(SDL_EVENT_MOUSE_MOTION, this,
                     &Hoverable::mf_on_mouse_motion);
-    return true;
 }
 
 
-auto
-Hoverable::render(sdl::Renderer &render) -> bool
+void
+Hoverable::render(sdl::Renderer &render)
 {
-    if (!is_visible()) return true;
-    if (!m_fading_out)
+    if (!is_visible()) return;
+
+    if (m_fading_out)
     {
-        sdl::FRect area { get_area() };
-        sdl::Color color { m_hovered ? m_hovered_color : get_color() };
-
-        if (!get_border_color())
-            return render.set_draw_color(color) && render.render_area(area);
-
-        sdl::FRect inside_area { get_area(false) };
-
-        return render.set_draw_color(*get_border_color())
-            && render.render_area(area, false) && render.set_draw_color(color)
-            && render.render_area(inside_area);
+        mf_render_fade(render);
+        return;
     }
 
-    return mf_render_fade(render);
+    sdl::FRect area { get_area() };
+    sdl::Color color { m_hovered ? m_hovered_color : get_color() };
+
+    if (!get_border_color())
+    {
+        render.set_draw_color(color);
+        render.render_rect(area);
+    }
+
+    sdl::FRect inside_area { get_area(false) };
+
+    render.set_draw_color(*get_border_color());
+    render.render_rect(area, false);
+    render.set_draw_color(color);
+    render.render_rect(inside_area);
 }
 
 
@@ -104,10 +109,10 @@ Hoverable::mf_on_mouse_motion(const sdl::Event &event,
 }
 
 
-auto
-Hoverable::mf_render_fade(sdl::Renderer &render) -> bool
+void
+Hoverable::mf_render_fade(sdl::Renderer &render)
 {
-    if (!m_fading_out) return true;
+    if (!m_fading_out) return;
 
     std::uint64_t now { SDL_GetTicks() };
     auto          delta_time { static_cast<float>(now - m_prev_frame_time) };
@@ -122,20 +127,18 @@ Hoverable::mf_render_fade(sdl::Renderer &render) -> bool
     if (!get_border_color())
     {
         render.set_draw_color(render_color);
-        render.render_area(area);
+        render.render_rect(area);
     }
     else
     {
         sdl::FRect inside_area { get_area(false) };
         render.set_draw_color(*get_border_color());
-        render.render_area(area, false);
+        render.render_rect(area, false);
         render.set_draw_color(render_color);
-        render.render_area(inside_area);
+        render.render_rect(inside_area);
     }
 
     m_prev_frame_time = SDL_GetTicks();
 
     if (t >= 1.0F) m_fading_out = false;
-
-    return true;
 }

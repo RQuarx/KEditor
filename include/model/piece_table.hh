@@ -43,6 +43,10 @@ namespace model
     class PieceTable
     {
     public:
+        [[nodiscard]]
+        static auto from_file(const std::string &path) -> PieceTable;
+
+
         PieceTable(std::string text);
 
         void insert(std::size_t position, std::string text);

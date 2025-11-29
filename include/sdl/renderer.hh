@@ -60,17 +60,17 @@ namespace sdl
         auto run_render_queue() -> RenderReturnType;
 
 
-        auto set_draw_color(Color color) -> bool;
-        auto set_text_color(Color color) -> bool;
+        void set_draw_color(Color color);
+        void set_text_color(Color color);
 
 
-        auto clear() -> bool;
+        void clear();
 
 
-        auto present() -> bool;
+        void present();
 
 
-        auto render_area(sdl::FRect &area, bool fill = true) -> bool;
+        void render_rect(sdl::FRect &area, bool fill = true);
 
 
         [[nodiscard]]

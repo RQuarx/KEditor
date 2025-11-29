@@ -5,8 +5,8 @@
 
 namespace sdl
 {
-    auto set_cursor(SDL_SystemCursor cursor) -> bool;
-    auto set_cursor() -> bool;
+    void set_cursor(SDL_SystemCursor cursor);
+    void set_cursor();
 }
 
 #endif /* _KEDITOR_SDL_CURSOR_HH */

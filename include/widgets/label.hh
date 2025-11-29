@@ -16,7 +16,7 @@ namespace widget
               std::shared_ptr<sdl::Font> font);
 
 
-        auto render(sdl::Renderer &render) -> bool override;
+        void render(sdl::Renderer &render) override;
 
     private:
         sdl::Color m_text_color;

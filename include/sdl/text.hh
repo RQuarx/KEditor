@@ -21,15 +21,15 @@ namespace sdl
             -> std::optional<Text>;
 
 
-        auto set_color(Color color) -> bool;
+        void set_color(Color color);
 
 
-        auto render(FPoint position) -> bool;
+        void render(FPoint position);
 
 
         [[nodiscard]]
         auto get_string() const -> std::string;
-        auto set_string(std::string string) -> bool;
+        void set_string(std::string string);
 
     private:
         std::string m_string;

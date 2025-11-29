@@ -1,5 +1,6 @@
 #include <utility>
 
+#include "sdl/instance.hh"
 #include "widgets/label.hh"
 
 using widget::Label;
@@ -28,21 +29,24 @@ Label::Label(sdl::FPoint                position,
 }
 
 
-auto
-Label::render(sdl::Renderer &render) -> bool
+void
+Label::render(sdl::Renderer &render)
 {
-    if (!is_visible()) return true;
+    if (!is_visible()) return;
 
     if (m_text.raw() == nullptr)
     {
         auto engine { render.get_text_engine() };
         auto text_buf { sdl::Text::create(render, *m_font.get(), m_string) };
 
-        if (!text_buf) return false;
+        if (!text_buf)
+            throw sdl::Exception { "sdl::Text::create(): {}",
+                                   sdl::get_error() };
         m_text = std::move(*text_buf);
 
         m_text.set_color(m_text_color);
     }
 
-    return Box::render(render) && m_text.render({ get_area().x, get_area().y });
+    Box::render(render);
+    m_text.render({ get_area().x, get_area().y });
 }

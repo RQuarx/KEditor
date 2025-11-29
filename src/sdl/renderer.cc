@@ -1,9 +1,8 @@
-#include "log.hh"
+#include "sdl/instance.hh"
 #include "sdl/renderer.hh"
 
 using sdl::Renderer;
 using sdl::TextEngine;
-using enum LogLevel;
 
 
 auto
@@ -71,33 +70,42 @@ Renderer::run_render_queue() -> RenderReturnType
 }
 
 
-auto
-Renderer::set_draw_color(Color color) -> bool
+void
+Renderer::set_draw_color(Color color)
 {
-    return SDL_SetRenderDrawColorFloat(m_object,
-                                       COLOR_TO_PARAM(color.to_fcolor()));
+    if (!SDL_SetRenderDrawColorFloat(m_object,
+                                     COLOR_TO_PARAM(color.to_fcolor())))
+        throw sdl::Exception { "Renderer::set_draw_color(): {}", get_error() };
 }
 
 
-auto
-Renderer::clear() -> bool
+void
+Renderer::clear()
 {
-    return SDL_RenderClear(m_object);
+    if (!SDL_RenderClear(m_object))
+        throw sdl::Exception { "Renderer::clear(): {}", get_error() };
 }
 
 
-auto
-Renderer::present() -> bool
+void
+Renderer::present()
 {
-    return SDL_RenderPresent(m_object);
+    if (!SDL_RenderPresent(m_object))
+        throw sdl::Exception { "Renderer::present(): {}", get_error() };
 }
 
 
-auto
-Renderer::render_area(sdl::FRect &area, bool fill) -> bool
+void
+Renderer::render_rect(sdl::FRect &area, bool fill)
 {
-    if (fill) return SDL_RenderFillRect(m_object, &area);
-    return SDL_RenderRect(m_object, &area);
+    if (fill)
+    {
+        if (SDL_RenderFillRect(m_object, &area)) return;
+        throw sdl::Exception { "Renderer::render_rect(): {}", get_error() };
+    }
+
+    if (!SDL_RenderRect(m_object, &area))
+        throw sdl::Exception { "Renderer::render_rect(): {}", get_error() };
 }
 
 

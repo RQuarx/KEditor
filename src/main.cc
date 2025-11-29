@@ -58,7 +58,7 @@ try
 
     return 0;
 }
-catch (const std::exception &e)
+catch (const kei::Exception &e)
 {
     logger.log<ERROR>("Exception caught: {}", e.what());
     return 1;

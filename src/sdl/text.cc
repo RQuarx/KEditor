@@ -1,3 +1,4 @@
+#include "sdl/instance.hh"
 #include "sdl/text.hh"
 
 using sdl::Text;
@@ -18,17 +19,19 @@ Text::create(Renderer &render, Font &font, std::string string)
 }
 
 
-auto
-Text::set_color(Color color) -> bool
+void
+Text::set_color(Color color)
 {
-    return TTF_SetTextColor(m_object, COLOR_TO_PARAM(color));
+    if (!TTF_SetTextColor(m_object, COLOR_TO_PARAM(color)))
+        throw sdl::Exception { "Text::set_color(): {}", get_error() };
 }
 
 
-auto
-Text::render(FPoint position) -> bool
+void
+Text::render(FPoint position)
 {
-    return TTF_DrawRendererText(m_object, position.x, position.y);
+    if (!TTF_DrawRendererText(m_object, position.x, position.y))
+        throw sdl::Exception { "Text::render(): {}", get_error() };
 }
 
 
@@ -39,11 +42,10 @@ Text::get_string() const -> std::string
 }
 
 
-auto
-Text::set_string(std::string string) -> bool
+void
+Text::set_string(std::string string)
 {
     if (!TTF_SetTextString(m_object, string.c_str(), string.length()))
-        return false;
+        throw sdl::Exception { "Text::set_string(): {}", get_error() };
     m_string = std::move(string);
-    return true;
 }

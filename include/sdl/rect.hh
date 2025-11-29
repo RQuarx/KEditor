@@ -25,9 +25,20 @@ template <> struct std::formatter<sdl::FRect> : std::formatter<std::string_view>
     format(sdl::FRect r, std::format_context &ctx) const
     {
         return std::formatter<std::string_view>::format(
-            std::format("{{x: {}, y: {}, w: {}, h: {}}}", r.x, r.y, r.w,
-                        r.h),
+            std::format("{{x: {}, y: {}, w: {}, h: {}}}", r.x, r.y, r.w, r.h),
             ctx);
+    }
+};
+
+
+template <>
+struct std::formatter<sdl::FPoint> : std::formatter<std::string_view>
+{
+    auto
+    format(sdl::FPoint p, std::format_context &ctx) const
+    {
+        return std::formatter<std::string_view>::format(
+            std::format("{{x: {}, y: {}}}", p.x, p.y), ctx);
     }
 };
 

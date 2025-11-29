@@ -46,10 +46,11 @@ namespace widget
         auto is_visible() const noexcept -> bool;
         void set_visible(bool visible);
 
-        virtual auto add_event_callbacks(sdl::EventHandler &handler,
-                                         sdl::Renderer     &render) -> bool;
+        virtual void add_event_callbacks(sdl::EventHandler &handler,
+                                         sdl::Renderer     &render)
+            = 0;
 
-        virtual auto render(sdl::Renderer &render) -> bool;
+        virtual void render(sdl::Renderer &render);
 
     private:
         sdl::FRect m_area;
