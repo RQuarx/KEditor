@@ -3,7 +3,7 @@
 #include <iostream>
 
 #include "exceptions.hh"
-#include "log.hh"
+#include "logger.hh"
 
 
 namespace
@@ -30,6 +30,13 @@ namespace
          { "\033[1;31merror\033[0;0;0m", "error" },
     }};
     /* clang-format on */
+}
+
+
+Logger::Logger(std::string_view log_level, const std::string &log_file)
+{
+    set_log_level(log_level);
+    set_log_file(log_file);
 }
 
 

@@ -18,13 +18,6 @@ enum class LogLevel : unsigned char
 class Logger
 {
 public:
-    /**
-     * Helper struct to store a format string and the source function name.
-     *
-     * [note]--------------------------------------------------------------
-     *
-     * Used internally for type-safe logging macros.
-     */
     template <typename... T_Args> struct StringSource
     {
         std::format_string<T_Args...> fmt;
@@ -42,34 +35,8 @@ public:
     using StringSource_t = std::type_identity_t<StringSource<T_Args...>>;
 
 
-    /**
-     * Set the logger threshold level.
-     *
-     * [note]-------------------------
-     *
-     * Messages below the passed level are not printed to console.
-     *
-     * [params]-----------------------
-     *
-     * `log_level`:
-     *   Either numeric or string log level ("debug", "info", etc.)
-     */
-    auto set_log_level(std::string_view log_level) -> Logger &;
+    Logger(std::string_view log_level, const std::string &log_file = "");
 
-
-    /**
-     * Set the log file path.
-     *
-     * [note]----------------
-     *
-     * Throws kei::FilesystemError if the file cannot be opened.
-     *
-     * [params]--------------
-     *
-     * `log_file`:
-     *   Path to the log file.
-     */
-    auto set_log_file(const std::string &log_file) -> Logger &;
 
 
     template <LogLevel T_Level, typename... T_Args>
@@ -92,6 +59,12 @@ private:
     std::size_t   m_longest_label { 0 };
 
 
+    auto set_log_level(std::string_view log_level) -> Logger &;
+
+
+    auto set_log_file(const std::string &log_file) -> Logger &;
+
+
     void write(LogLevel level, std::string_view domain, const std::string &msg);
 
 
@@ -99,7 +72,5 @@ private:
     static auto get_time() -> std::string;
 };
 
-
-inline Logger logger;
 
 #endif /* _KEDITOR_LOG_HH */

@@ -3,11 +3,9 @@
 #include <cstdint>
 #include <functional>
 #include <mutex>
-#include <utility>
 
 #include <SDL3/SDL_events.h>
 
-#include "log.hh"
 #include "sdl/renderer.hh"
 #include "sdl/signal.hh"
 

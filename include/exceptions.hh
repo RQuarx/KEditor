@@ -6,7 +6,7 @@
 
 namespace kei
 {
-    class Exception
+    class Exception : public std::exception
     {
     public:
         template <typename... T_Args>
@@ -16,12 +16,15 @@ namespace kei
         }
 
 
-        ~Exception() noexcept = default;
+        constexpr Exception() : m_string("No message") {}
+
+
+        ~Exception() noexcept override = default;
 
 
         [[nodiscard]]
         auto
-        what() const noexcept -> const char *
+        what() const noexcept -> const char * override
         {
             return m_string.c_str();
         }

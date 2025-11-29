@@ -1,15 +1,10 @@
 #include "config.hh"
-#include "log.hh"
-#include "model/piece_table.hh"
+#include "logger.hh"
 #include "sdl/event.hh"
-#include "sdl/font.hh"
 #include "sdl/instance.hh"
 #include "sdl/renderer.hh"
 #include "sdl/window.hh"
-#include "widgets/hoverable.hh"
-#include "widgets/label.hh"
-
-#define VALUE_OR_OTHER(val, other) (val) != nullptr ? (val) : (other)
+#include "utils.hh"
 
 using enum LogLevel;
 
@@ -23,33 +18,29 @@ namespace
         auto window { sdl::Window::create(
             APP_NAME, SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_RESIZABLE) };
         if (!window)
-        {
-            logger.log<ERROR>("Failed to create a window: {}",
-                              sdl::get_error());
-            std::exit(1);
-        }
+            throw sdl::Exception { "Failed to create a window: {}",
+                                   sdl::get_error() };
 
         auto render { sdl::Renderer::create(std::move(*window), "") };
         if (!render)
-        {
-            logger.log<ERROR>("Failed to create a renderer: {}",
-                              sdl::get_error());
-            std::exit(1);
-        }
+            throw sdl::Exception { "Failed to create a renderer: {}",
+                                   sdl::get_error() };
 
         return std::move(*render);
     }
+
+
+    Logger logger { kei::getenv("LOG_LEVEL", "warn"),
+                    kei::getenv("LOG_FILE", "") };
 }
 
 
 auto
 main(int argc, char **argv) -> int
+try
 {
-    logger.set_log_file(VALUE_OR_OTHER(std::getenv("LOG_FILE"), ""))
-        .set_log_level(VALUE_OR_OTHER(std::getenv("LOG_LEVEL"), "warn"));
-
-    Config config;
     sdl::Instance SDL { SDL_INIT_VIDEO };
+    Config        config;
 
     sdl::Renderer     render { create_window_and_renderer() };
     sdl::EventHandler event_handler;
@@ -57,11 +48,18 @@ main(int argc, char **argv) -> int
     while (true)
     {
         auto res { event_handler.poll(render) };
-        if (res == sdl::EventReturnType::SUCCESS) std::exit(0);
-        if (res == sdl::EventReturnType::FAILURE) std::exit(1);
+        if (res == sdl::EventReturnType::SUCCESS) break;
+        if (res == sdl::EventReturnType::FAILURE) return 1;
 
         render.set_draw_color("0E0E0E"_rgb);
         render.clear();
         render.present();
     }
+
+    return 0;
+}
+catch (const std::exception &e)
+{
+    logger.log<ERROR>("Exception caught: {}", e.what());
+    return 1;
 }
