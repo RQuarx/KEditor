@@ -4,18 +4,15 @@
 using sdl::Text;
 
 
-auto
-Text::create(Renderer &render, Font &font, std::string string)
-    -> std::optional<Text>
+Text::Text(Renderer &render, Font &font, std::string string)
 {
-    Text text;
-    text.m_object = TTF_CreateText(render.get_text_engine()->raw(), font.raw(),
+    m_object = TTF_CreateText(render.get_text_engine()->raw(), font.raw(),
                                    string.c_str(), string.length());
 
-    if (text.m_object == nullptr) return std::nullopt;
+    if (m_object == nullptr)
+        throw sdl::Exception { "Text::Text(): {}", get_error() };
 
-    text.m_string = std::move(string);
-    return text;
+    m_string = std::move(string);
 }
 
 

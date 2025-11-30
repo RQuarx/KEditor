@@ -33,11 +33,7 @@ namespace
                                  area.w - (exclude_amount * 2.0F),
                                  area.h - (exclude_amount * 2.0F) };
 
-        float x2 { actual_area.x + actual_area.w };
-        float y2 { actual_area.y + actual_area.h };
-
-        return (position.x >= actual_area.x && position.x < x2
-                && position.y >= actual_area.y && position.y < y2);
+        return sdl::is_point_in_rect(actual_area, position);
     }
 }
 
@@ -52,8 +48,7 @@ Hoverable::Hoverable(sdl::FRect                area,
 
 
 void
-Hoverable::add_event_callbacks(sdl::EventHandler &handler,
-                               sdl::Renderer & /* render */)
+Hoverable::add_event_callbacks(sdl::EventHandler &handler)
 {
     handler.connect(SDL_EVENT_MOUSE_MOTION, this,
                     &Hoverable::mf_on_mouse_motion);

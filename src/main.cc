@@ -15,18 +15,11 @@ namespace
     auto
     create_window_and_renderer() -> sdl::Renderer
     {
-        auto window { sdl::Window::create(
-            APP_NAME, SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_RESIZABLE) };
-        if (!window)
-            throw sdl::Exception { "Failed to create a window: {}",
-                                   sdl::get_error() };
+        sdl::Window window { APP_NAME, SDL_WINDOW_HIGH_PIXEL_DENSITY
+                                           | SDL_WINDOW_RESIZABLE };
+        sdl::Renderer render { std::move(window), "" };
 
-        auto render { sdl::Renderer::create(std::move(*window), "") };
-        if (!render)
-            throw sdl::Exception { "Failed to create a renderer: {}",
-                                   sdl::get_error() };
-
-        return std::move(*render);
+        return render;
     }
 
 
@@ -39,11 +32,11 @@ auto
 main(int argc, char **argv) -> int
 try
 {
-    sdl::Instance SDL { SDL_INIT_VIDEO };
-    Config        config;
-
+    sdl::Instance     SDL { SDL_INIT_VIDEO };
     sdl::Renderer     render { create_window_and_renderer() };
     sdl::EventHandler event_handler;
+
+    Config config;
 
     while (true)
     {
@@ -51,7 +44,6 @@ try
         if (res == sdl::EventReturnType::SUCCESS) break;
         if (res == sdl::EventReturnType::FAILURE) return 1;
 
-        render.set_draw_color("0E0E0E"_rgb);
         render.clear();
         render.present();
     }

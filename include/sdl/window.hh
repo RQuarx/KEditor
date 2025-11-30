@@ -25,8 +25,7 @@ namespace sdl
 
 
         [[nodiscard]]
-        static auto create(const std::string &title, SDL_WindowFlags flags)
-            -> std::optional<Window>;
+        Window(const std::string &title, SDL_WindowFlags flags);
 
 
         [[nodiscard]]

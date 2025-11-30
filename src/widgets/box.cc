@@ -5,7 +5,7 @@ using widget::Box;
 
 Box::Box(sdl::FRect                widget_area,
          sdl::Color                widget_color,
-         std::optional<sdl::Color> border_color)
+         std::optional<sdl::Color> border_color) noexcept
     : m_area(widget_area), m_color(widget_color), m_border_color(border_color),
       m_border_width_px(1), m_visible(true)
 {
@@ -37,7 +37,7 @@ Box::get_border_color() const noexcept -> std::optional<sdl::Color>
 
 
 void
-Box::set_position(sdl::FPoint new_position)
+Box::set_position(sdl::FPoint new_position) noexcept
 {
     m_area.x = new_position.x;
     m_area.y = new_position.y;
@@ -45,7 +45,7 @@ Box::set_position(sdl::FPoint new_position)
 
 
 void
-Box::set_size(sdl::FSize new_size)
+Box::set_size(sdl::FSize new_size) noexcept
 {
     m_area.w = new_size.w;
     m_area.h = new_size.h;
@@ -53,28 +53,28 @@ Box::set_size(sdl::FSize new_size)
 
 
 void
-Box::set_color(sdl::Color new_color)
+Box::set_color(sdl::Color new_color) noexcept
 {
     m_color = new_color;
 }
 
 
 void
-Box::set_border_color(sdl::Color new_color)
+Box::set_border_color(sdl::Color new_color) noexcept
 {
     m_border_color = new_color;
 }
 
 
 void
-Box::set_border_width(unsigned int px)
+Box::set_border_width(unsigned int px) noexcept
 {
     m_border_width_px = px;
 }
 
 
 auto
-Box::get_border_width() const -> unsigned int
+Box::get_border_width() const noexcept -> unsigned int
 {
     return m_border_width_px;
 }
@@ -89,9 +89,15 @@ Box::is_visible() const noexcept -> bool
 
 
 void
-Box::set_visible(bool visible)
+Box::set_visible(bool visible) noexcept
 {
     m_visible = visible;
+}
+
+
+void
+Box::add_event_callbacks(sdl::EventHandler & /* event */)
+{
 }
 
 

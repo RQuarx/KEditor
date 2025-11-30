@@ -16,6 +16,19 @@ namespace sdl
         float w;
         float h;
     };
+
+
+    [[nodiscard]]
+    constexpr auto
+    is_point_in_rect(const sdl::FRect &rect, const sdl::FPoint &point) noexcept
+        -> bool
+    {
+        float x2 { rect.x + rect.w };
+        float y2 { rect.y + rect.h };
+
+        return (point.x >= rect.x && point.x < x2 && point.y >= rect.y
+                && point.y < y2);
+    }
 }
 
 

@@ -17,7 +17,7 @@ public:
     template <typename Tp>
     [[nodiscard]]
     auto
-    get(const std::string &key) const -> Tp
+    get(const std::string &key, const std::string &other = "") const -> Tp
     {
         const Json::Value *node { &m_config };
 
@@ -40,7 +40,16 @@ public:
             start = dot + 1;
         }
 
-        return convert<Tp>(*node, key);
+        try
+        {
+            return convert<Tp>(*node, key);
+        }
+        catch (const kei::ConversionError &e)
+        {
+            if (other.empty())
+                throw e;
+            return other;
+        }
     }
 
 private:
@@ -51,56 +60,13 @@ private:
 
     template <typename Tp>
     [[nodiscard]]
-    static auto convert(const Json::Value &, const std::string &) -> Tp;
+    static auto
+    convert(const Json::Value &val, const std::string &key) -> Tp
+    {
+        if (val.is<Tp>()) return val.as<Tp>();
+        throw kei::ConversionError { "{} is not of type {}", key,
+                                     typeid(Tp).name() };
+    }
 };
-
-
-template <>
-inline auto
-Config::convert<int>(const Json::Value &v, const std::string &key) -> int
-{
-    if (v.isInt()) return v.asInt();
-
-    throw kei::ConversionError {
-        "Config: key \"{}\" cannot be converted to int", key
-    };
-}
-
-
-template <>
-inline auto
-Config::convert<double>(const Json::Value &v, const std::string &key) -> double
-{
-    if (v.isDouble() || v.isInt()) return v.asDouble();
-
-    throw kei::ConversionError {
-        "Config: key \"{}\" cannot be converted to double", key
-    };
-}
-
-
-template <>
-inline auto
-Config::convert<bool>(const Json::Value &v, const std::string &key) -> bool
-{
-    if (v.isBool()) return v.asBool();
-
-    throw kei::ConversionError {
-        "Config: key \"{}\" cannot be converted to bool", key
-    };
-}
-
-
-template <>
-inline auto
-Config::convert<std::string>(const Json::Value &v, const std::string &key)
-    -> std::string
-{
-    if (v.isString()) return v.asString();
-
-    throw kei::ConversionError {
-        "Config: key \"{}\" cannot be converted to string", key
-    };
-}
 
 #endif /* _KEDITOR_CONFIG_HH */

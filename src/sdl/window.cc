@@ -1,20 +1,18 @@
 #include <SDL3/SDL_mouse.h>
 
+#include "exceptions.hh"
+#include "sdl/instance.hh"
 #include "sdl/window.hh"
 
 using sdl::Window;
 
 
-auto
-Window::create(const std::string &title, SDL_WindowFlags flags)
-    -> std::optional<Window>
+Window::Window(const std::string &title, SDL_WindowFlags flags)
 {
-    Window window;
-    window.m_object = SDL_CreateWindow(title.c_str(), 600, 300, flags);
+    m_object = SDL_CreateWindow(title.c_str(), 600, 300, flags);
 
-    if (window.m_object == nullptr) return std::nullopt;
-
-    return window;
+    if (m_object == nullptr)
+        throw sdl::Exception { "Window::Window(): {}", get_error() };
 }
 
 

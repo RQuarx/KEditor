@@ -13,7 +13,7 @@ namespace widget
     public:
         Box(sdl::FRect                widget_area,
             sdl::Color                widget_color,
-            std::optional<sdl::Color> border_color = std::nullopt);
+            std::optional<sdl::Color> border_color = std::nullopt) noexcept;
 
 
         virtual ~Box() = default;
@@ -30,25 +30,23 @@ namespace widget
         auto get_border_color() const noexcept -> std::optional<sdl::Color>;
 
 
-        void set_position(sdl::FPoint new_position);
-        void set_size(sdl::FSize new_size);
+        void set_position(sdl::FPoint new_position) noexcept;
+        void set_size(sdl::FSize new_size) noexcept;
 
-        void set_color(sdl::Color new_color);
-        void set_border_color(sdl::Color new_color);
+        void set_color(sdl::Color new_color) noexcept;
+        void set_border_color(sdl::Color new_color) noexcept;
 
-        void set_border_width(unsigned int px);
+        void set_border_width(unsigned int px) noexcept;
 
         [[nodiscard]]
-        auto get_border_width() const -> unsigned int;
+        auto get_border_width() const noexcept -> unsigned int;
 
 
         [[nodiscard]]
         auto is_visible() const noexcept -> bool;
-        void set_visible(bool visible);
+        void set_visible(bool visible) noexcept;
 
-        virtual void add_event_callbacks(sdl::EventHandler &handler,
-                                         sdl::Renderer     &render)
-            = 0;
+        virtual void add_event_callbacks(sdl::EventHandler &handler);
 
         virtual void render(sdl::Renderer &render);
 

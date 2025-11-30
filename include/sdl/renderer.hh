@@ -33,7 +33,7 @@ namespace sdl
 
 
         [[nodiscard]]
-        static auto create(Renderer &render) -> std::optional<TextEngine>;
+        TextEngine(Renderer &render);
     };
 
 
@@ -44,9 +44,7 @@ namespace sdl
         using Resource::Resource;
 
 
-        [[nodiscard]]
-        static auto create(Window &&window, const std::string &device)
-            -> std::optional<Renderer>;
+        Renderer(Window &&window, const std::string &device);
 
 
         [[nodiscard]]

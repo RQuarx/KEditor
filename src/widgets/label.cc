@@ -1,6 +1,5 @@
 #include <utility>
 
-#include "sdl/instance.hh"
 #include "widgets/label.hh"
 
 using widget::Label;
@@ -37,12 +36,7 @@ Label::render(sdl::Renderer &render)
     if (m_text.raw() == nullptr)
     {
         auto engine { render.get_text_engine() };
-        auto text_buf { sdl::Text::create(render, *m_font.get(), m_string) };
-
-        if (!text_buf)
-            throw sdl::Exception { "sdl::Text::create(): {}",
-                                   sdl::get_error() };
-        m_text = std::move(*text_buf);
+        m_text = sdl::Text { render, *m_font.get(), m_string };
 
         m_text.set_color(m_text_color);
     }

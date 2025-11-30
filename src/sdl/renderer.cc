@@ -5,40 +5,31 @@ using sdl::Renderer;
 using sdl::TextEngine;
 
 
-auto
-TextEngine::create(Renderer &render) -> std::optional<TextEngine>
+TextEngine::TextEngine(Renderer &render)
 {
-    TextEngine engine;
-
-    engine.m_object = TTF_CreateRendererTextEngine(render.raw());
-    if (engine.m_object == nullptr) return std::nullopt;
-    return engine;
+    m_object = TTF_CreateRendererTextEngine(render.raw());
+    if (m_object == nullptr)
+        throw sdl::Exception { "TextEngine::TextEngine(): {}", get_error() };
 }
 
 
-auto
-Renderer::create(Window &&window, const std::string &device)
-    -> std::optional<Renderer>
+Renderer::Renderer(Window &&window, const std::string &device)
 {
-    Renderer render;
+    m_object = SDL_CreateRenderer(window.raw(),
+                                  device.empty() ? nullptr : device.c_str());
 
-    render.m_object = SDL_CreateRenderer(
-        window.raw(), device.empty() ? nullptr : device.c_str());
+    if (m_object == nullptr)
+        throw sdl::Exception { "Renderer::Renderer(): {}", get_error() };
 
-    if (render.m_object == nullptr) return std::nullopt;
+    if (!SDL_SetRenderDrawBlendMode(m_object, SDL_BLENDMODE_BLEND))
+        throw sdl::Exception { "SDL_SetRenderDrawBlendMode(): {}",
+                               get_error() };
 
-    if (!SDL_SetRenderDrawBlendMode(render.m_object, SDL_BLENDMODE_BLEND))
-        return std::nullopt;
-    if (!SDL_SetRenderVSync(render.m_object, 1)) return std::nullopt;
+    if (!SDL_SetRenderVSync(m_object, 1))
+        throw sdl::Exception { "SDL_SetRenderVSync(): {}", get_error() };
 
-    auto engine { TextEngine::create(render) };
-
-    /* renderer will destroy itself */
-    if (!engine) return std::nullopt;
-
-    render.m_engine = std::make_shared<TextEngine>(std::move(*engine));
-    render.m_window = std::move(window);
-    return render;
+    m_engine = std::make_shared<TextEngine>(*this);
+    m_window = std::move(window);
 }
 
 

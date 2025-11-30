@@ -1,19 +1,18 @@
+#include "exceptions.hh"
 #include "sdl/font.hh"
+#include "sdl/instance.hh"
 
 using sdl::Font;
 
 
-auto
-Font::create(std::filesystem::path font_path, float ptsize)
-    -> std::optional<Font>
+Font::Font(std::filesystem::path font_path, float ptsize)
 {
-    Font font;
-    font.m_object = TTF_OpenFont(font_path.c_str(), ptsize);
+    m_object = TTF_OpenFont(font_path.c_str(), ptsize);
 
-    if (font.m_object == nullptr) return std::nullopt;
+    if (m_object == nullptr)
+        throw sdl::Exception { "Font::Font(): {}", get_error() };
 
-    TTF_SetFontHinting(font.m_object, TTF_HINTING_LIGHT_SUBPIXEL);
+    m_font_path = std::move(font_path);
 
-    font.m_font_path = std::move(font_path);
-    return font;
+    TTF_SetFontHinting(m_object, TTF_HINTING_LIGHT_SUBPIXEL);
 }

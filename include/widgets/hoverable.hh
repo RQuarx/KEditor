@@ -17,8 +17,7 @@ namespace widget
                   std::optional<sdl::Color> border_color = std::nullopt);
 
 
-        void add_event_callbacks(sdl::EventHandler &handler,
-                                 sdl::Renderer     &render) override;
+        void add_event_callbacks(sdl::EventHandler &handler) override;
 
 
         void render(sdl::Renderer &render) override;

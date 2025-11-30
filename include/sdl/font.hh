@@ -14,10 +14,7 @@ namespace sdl
     public:
         using Resource::Resource;
 
-
-        [[nodiscard]]
-        static auto create(std::filesystem::path font_path,
-                           float ptsize = 12.0F) -> std::optional<Font>;
+        Font(std::filesystem::path font_path, float ptsize = 12.0F);
 
 
     private:

@@ -16,9 +16,7 @@ namespace sdl
         using Resource::Resource;
 
 
-        [[nodiscard]]
-        static auto create(Renderer &render, Font &font, std::string string)
-            -> std::optional<Text>;
+        Text(Renderer &render, Font &font, std::string string);
 
 
         void set_color(Color color);

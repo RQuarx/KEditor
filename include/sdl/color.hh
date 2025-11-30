@@ -30,6 +30,14 @@ namespace sdl
         {
         }
 
+        Color(std::string_view string)
+        {
+            if (!string.starts_with('#'))
+                throw kei::InvalidArgument { "Provided string is not a hex" };
+
+            *this = from_hex(string.data(), string.length());
+        }
+
 
         static constexpr auto
         from_rgb(std::uint32_t value) -> Color
