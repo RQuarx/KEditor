@@ -2,6 +2,7 @@
 #define _KEDITOR_CONFIG_HH
 #include <filesystem>
 #include <string>
+#include <unordered_map>
 
 #include <json/value.h>
 
@@ -11,7 +12,7 @@
 class Config
 {
 public:
-    Config();
+    Config(const std::span<char *> &arg_values);
 
 
     template <typename Tp>
@@ -46,8 +47,7 @@ public:
         }
         catch (const kei::ConversionError &e)
         {
-            if (other.empty())
-                throw e;
+            if (other.empty()) throw e;
             return other;
         }
     }
@@ -55,7 +55,12 @@ public:
 private:
     std::filesystem::path m_config_path;
 
-    Json::Value m_config;
+    Json::Value                                  m_config;
+    std::unordered_map<std::string, std::string> m_arg_values;
+
+
+    void parse_config_file();
+    void parse_args(const std::span<char *> &arg_values);
 
 
     template <typename Tp>

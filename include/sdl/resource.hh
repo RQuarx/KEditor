@@ -4,11 +4,17 @@
 
 namespace sdl
 {
+    /**
+     * @brief A lifetime manager for SDL objects.
+     *
+     * @tparam T_SDLObject  The SDL object to manage.
+     * @tparam T_Destructor The `SDL_Destroy*` function for the object.
+     */
     template <typename T_SDLObject, void (*T_Destructor)(T_SDLObject *)>
     class Resource
     {
     public:
-        Resource() : m_object(nullptr) {}
+        constexpr Resource() : m_object(nullptr) {}
 
         explicit Resource(T_SDLObject *object) : m_object(object) {}
 

@@ -25,8 +25,7 @@ namespace sdl
         if (!CURSORS.contains(cursor))
             CURSORS[cursor] = Cursor { SDL_CreateSystemCursor(cursor) };
 
-        if (!SDL_SetCursor(CURSORS[cursor].raw()))
-            throw sdl::Exception { "set_cursor: {}", get_error() };
+        if (!SDL_SetCursor(CURSORS[cursor].raw())) throw sdl::Exception {};
     }
 
 
@@ -38,7 +37,7 @@ namespace sdl
                 = Cursor { SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_DEFAULT) };
 
         if (!SDL_SetCursor(CURSORS[SDL_SYSTEM_CURSOR_DEFAULT].raw()))
-            throw sdl::Exception { "set_cursor: {}", get_error() };
+            throw sdl::Exception {};
     }
 }
 

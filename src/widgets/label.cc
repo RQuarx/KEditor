@@ -10,20 +10,11 @@ Label::Label(sdl::FPoint                position,
              sdl::Color                 background_color,
              sdl::Color                 text_color,
              std::shared_ptr<sdl::Font> font)
-    : Box{{ position.x, position.y, 0, 0 }, background_color},
-      m_text_color{text_color}, m_string{std::move(string)},
-      m_font{std::move(font)}
+    : Box { { position.x, position.y, 0, 0 }, background_color },
+      m_text_color { text_color }, m_string { std::move(string) },
+      m_font { std::move(font) }
 {
-    int w { 0 };
-    int h { 0 };
-
-    if (!TTF_GetStringSize(m_font->raw(), m_string.c_str(), m_string.length(),
-                           &w, &h))
-        throw sdl::Exception("TTF_GetStringSize failed");
-
-    m_string_size.w = static_cast<float>(w);
-    m_string_size.h = static_cast<float>(h);
-
+    m_string_size = m_font->get_string_size(m_string);
     set_size(m_string_size);
 }
 

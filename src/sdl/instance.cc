@@ -2,7 +2,6 @@
 
 #include <SDL3_ttf/SDL_ttf.h>
 
-#include "exceptions.hh"
 #include "sdl/instance.hh"
 
 using sdl::Instance;
@@ -20,10 +19,10 @@ Instance::Instance(SDL_InitFlags flags)
     if (Instance::initialized) return;
 
     if (!SDL_Init(flags))
-        throw kei::InitError { "Failed to initialize SDL: {}", SDL_GetError() };
+        throw InitError { "Failed to initialize SDL: {}", SDL_GetError() };
 
     if (!TTF_Init())
-        throw kei::InitError { "Failed to initialize SDL_TTF: {}",
+        throw InitError { "Failed to initialize SDL_TTF: {}",
                                SDL_GetError() };
 }
 

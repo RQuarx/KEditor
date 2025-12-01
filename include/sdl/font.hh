@@ -4,6 +4,7 @@
 
 #include <SDL3_ttf/SDL_ttf.h>
 
+#include "sdl/rect.hh"
 #include "sdl/resource.hh"
 
 
@@ -15,6 +16,10 @@ namespace sdl
         using Resource::Resource;
 
         Font(std::filesystem::path font_path, float ptsize = 12.0F);
+
+
+        [[nodiscard]]
+        auto get_string_size(std::string_view string) -> sdl::FSize;
 
 
     private:

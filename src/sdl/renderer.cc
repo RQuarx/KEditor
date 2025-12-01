@@ -8,8 +8,7 @@ using sdl::TextEngine;
 TextEngine::TextEngine(Renderer &render)
 {
     m_object = TTF_CreateRendererTextEngine(render.raw());
-    if (m_object == nullptr)
-        throw sdl::Exception { "TextEngine::TextEngine(): {}", get_error() };
+    if (m_object == nullptr) throw sdl::Exception {};
 }
 
 
@@ -18,15 +17,12 @@ Renderer::Renderer(Window &&window, const std::string &device)
     m_object = SDL_CreateRenderer(window.raw(),
                                   device.empty() ? nullptr : device.c_str());
 
-    if (m_object == nullptr)
-        throw sdl::Exception { "Renderer::Renderer(): {}", get_error() };
+    if (m_object == nullptr) throw sdl::Exception {};
 
     if (!SDL_SetRenderDrawBlendMode(m_object, SDL_BLENDMODE_BLEND))
-        throw sdl::Exception { "SDL_SetRenderDrawBlendMode(): {}",
-                               get_error() };
+        throw sdl::Exception {};
 
-    if (!SDL_SetRenderVSync(m_object, 1))
-        throw sdl::Exception { "SDL_SetRenderVSync(): {}", get_error() };
+    if (!SDL_SetRenderVSync(m_object, 1)) throw sdl::Exception {};
 
     m_engine = std::make_shared<TextEngine>(*this);
     m_window = std::move(window);

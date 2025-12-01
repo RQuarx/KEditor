@@ -10,13 +10,13 @@ namespace kei
     {
     public:
         template <typename... T_Args>
-        constexpr Exception(std::format_string<T_Args...> fmt, T_Args &&...args)
+        Exception(std::format_string<T_Args...> fmt, T_Args &&...args)
             : m_string { std::format(fmt, std::forward<T_Args>(args)...) }
         {
         }
 
 
-        constexpr Exception() : m_string("No message") {}
+        Exception() : m_string { "No message" } {}
 
 
         ~Exception() noexcept override = default;
@@ -38,6 +38,7 @@ class name : public kei::Exception /* NOLINT */ \
 {                                               \
 public:                                         \
     using kei::Exception::Exception;            \
+    const std::string_view m_name { #name };    \
 }
 
     EXCEPTION_OBJ(ConversionError);
@@ -46,8 +47,6 @@ public:                                         \
     EXCEPTION_OBJ(FilesystemError);
     EXCEPTION_OBJ(InitError);
 }
-
-namespace sdl { EXCEPTION_OBJ(Exception); }
 
 
 #undef EXCEPTION_OBJ
