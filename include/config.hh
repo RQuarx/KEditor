@@ -1,5 +1,4 @@
-#ifndef _KEDITOR_CONFIG_HH
-#define _KEDITOR_CONFIG_HH
+#pragma once
 #include <filesystem>
 #include <string>
 #include <unordered_map>
@@ -7,71 +6,78 @@
 #include <json/value.h>
 
 #include "exceptions.hh"
+#include "logger.hh"
+
+namespace lyra { class args; }
 
 
-class Config
+namespace kei
 {
-public:
-    Config(const std::span<char *> &arg_values);
-
-
-    template <typename Tp>
-    [[nodiscard]]
-    auto
-    get(const std::string &key, const std::string &other = "") const -> Tp
+    class config
     {
-        const Json::Value *node { &m_config };
+    public:
+        config(const lyra::args &arg_values);
 
-        size_t start { 0 };
-        while (true)
+
+        template <typename Tp>
+        [[nodiscard]]
+        auto
+        get(const std::string &key, const std::string &other = "") const -> Tp
         {
-            std::size_t dot { key.find('.', start) };
-            std::string part { (dot == std::string::npos)
-                                   ? key.substr(start)
-                                   : key.substr(start, dot - start) };
+            const Json::Value *node { &m_config };
 
-            if (!node->isObject() || !node->isMember(part))
-                throw kei::InvalidArgument {
-                    R"(Config: missing key "{}" in path "{}")", part, key
-                };
+            size_t start { 0 };
+            while (true)
+            {
+                std::size_t dot { key.find('.', start) };
+                std::string part { (dot == std::string::npos)
+                                       ? key.substr(start)
+                                       : key.substr(start, dot - start) };
 
-            node = &(*node)[part];
+                if (!node->isObject() || !node->isMember(part))
+                    throw kei::invalid_argument {
+                        R"(config: missing key "{}" in path "{}")", part, key
+                    };
 
-            if (dot == std::string::npos) break;
-            start = dot + 1;
+                node = &(*node)[part];
+
+                if (dot == std::string::npos) break;
+                start = dot + 1;
+            }
+
+            try
+            {
+                return convert<Tp>(*node, key);
+            }
+            catch (const kei::conversion_error &e)
+            {
+                if (other.empty()) throw e;
+                return other;
+            }
         }
 
-        try
+
+        auto get_logger() -> kei::logger;
+
+    private:
+        std::filesystem::path m_config_path;
+
+        Json::Value                                  m_config;
+        std::unordered_map<std::string, std::string> m_arg_values;
+
+
+        void parse_config_file();
+        void parse_args(const lyra::args &arg_values);
+
+
+        template <typename Tp>
+        [[nodiscard]]
+        static auto
+        convert(const Json::Value &val, const std::string &key) -> Tp
         {
-            return convert<Tp>(*node, key);
+            if (val.is<Tp>()) return val.as<Tp>();
+            throw kei::conversion_error { "{} is not of type {}", key,
+                                          typeid(Tp).name() };
         }
-        catch (const kei::ConversionError &e)
-        {
-            if (other.empty()) throw e;
-            return other;
-        }
-    }
-
-private:
-    std::filesystem::path m_config_path;
-
-    Json::Value                                  m_config;
-    std::unordered_map<std::string, std::string> m_arg_values;
-
-
-    void parse_config_file();
-    void parse_args(const std::span<char *> &arg_values);
-
-
-    template <typename Tp>
-    [[nodiscard]]
-    static auto
-    convert(const Json::Value &val, const std::string &key) -> Tp
-    {
-        if (val.is<Tp>()) return val.as<Tp>();
-        throw kei::ConversionError { "{} is not of type {}", key,
-                                     typeid(Tp).name() };
-    }
-};
-
-#endif /* _KEDITOR_CONFIG_HH */
+    };
+}

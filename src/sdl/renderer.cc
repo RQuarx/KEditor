@@ -1,103 +1,103 @@
 #include "sdl/instance.hh"
 #include "sdl/renderer.hh"
 
-using sdl::Renderer;
-using sdl::TextEngine;
+using sdl::renderer;
+using sdl::text_engine;
 
 
-TextEngine::TextEngine(Renderer &render)
+text_engine::text_engine(renderer &render)
 {
     m_object = TTF_CreateRendererTextEngine(render.raw());
-    if (m_object == nullptr) throw sdl::Exception {};
+    if (m_object == nullptr) throw sdl::exception {};
 }
 
 
-Renderer::Renderer(Window &&window, const std::string &device)
+renderer::renderer(window &&window, const std::string &device)
 {
     m_object = SDL_CreateRenderer(window.raw(),
                                   device.empty() ? nullptr : device.c_str());
 
-    if (m_object == nullptr) throw sdl::Exception {};
+    if (m_object == nullptr) throw sdl::exception {};
 
     if (!SDL_SetRenderDrawBlendMode(m_object, SDL_BLENDMODE_BLEND))
-        throw sdl::Exception {};
+        throw sdl::exception {};
 
-    if (!SDL_SetRenderVSync(m_object, 1)) throw sdl::Exception {};
+    if (!SDL_SetRenderVSync(m_object, 1)) throw sdl::exception {};
 
-    m_engine = std::make_shared<TextEngine>(*this);
+    m_engine = std::make_shared<text_engine>(*this);
     m_window = std::move(window);
 }
 
 
 auto
-Renderer::get_render_nexts() -> Signal<RenderReturnType, sdl::Renderer &> &
+renderer::get_render_nexts() -> signal<render_return_type, sdl::renderer &> &
 {
     return m_render_nexts;
 }
 
 
 auto
-Renderer::get_window() -> sdl::Window &
+renderer::get_window() -> sdl::window &
 {
     return m_window;
 }
 
 
 auto
-Renderer::run_render_queue() -> RenderReturnType
+renderer::run_render_queue() -> render_return_type
 {
     for (auto &slot : m_render_nexts.get_slots())
     {
         auto res { slot.slot(*this) };
 
-        if (res == RenderReturnType::FAILURE) return RenderReturnType::FAILURE;
+        if (res == render_return_type::FAILURE) return render_return_type::FAILURE;
     }
 
-    return RenderReturnType::SUCCESS;
+    return render_return_type::SUCCESS;
 }
 
 
 void
-Renderer::set_draw_color(Color color)
+renderer::set_draw_color(color color)
 {
     if (!SDL_SetRenderDrawColorFloat(m_object,
                                      COLOR_TO_PARAM(color.to_fcolor())))
-        throw sdl::Exception { "Renderer::set_draw_color(): {}", get_error() };
+        throw sdl::exception { "renderer::set_draw_color(): {}", get_error() };
 }
 
 
 void
-Renderer::clear()
+renderer::clear()
 {
     if (!SDL_RenderClear(m_object))
-        throw sdl::Exception { "Renderer::clear(): {}", get_error() };
+        throw sdl::exception { "renderer::clear(): {}", get_error() };
 }
 
 
 void
-Renderer::present()
+renderer::present()
 {
     if (!SDL_RenderPresent(m_object))
-        throw sdl::Exception { "Renderer::present(): {}", get_error() };
+        throw sdl::exception { "renderer::present(): {}", get_error() };
 }
 
 
 void
-Renderer::render_rect(sdl::FRect &area, bool fill)
+renderer::render_rect(sdl::frect &area, bool fill)
 {
     if (fill)
     {
         if (SDL_RenderFillRect(m_object, &area)) return;
-        throw sdl::Exception { "Renderer::render_rect(): {}", get_error() };
+        throw sdl::exception { "renderer::render_rect(): {}", get_error() };
     }
 
     if (!SDL_RenderRect(m_object, &area))
-        throw sdl::Exception { "Renderer::render_rect(): {}", get_error() };
+        throw sdl::exception { "renderer::render_rect(): {}", get_error() };
 }
 
 
 auto
-Renderer::get_text_engine() const -> std::shared_ptr<TextEngine>
+renderer::get_text_engine() const -> std::shared_ptr<text_engine>
 {
     return m_engine;
 }

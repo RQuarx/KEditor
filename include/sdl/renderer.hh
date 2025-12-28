@@ -1,5 +1,4 @@
-#ifndef _KEDITOR_SDL_RENDERER_HH
-#define _KEDITOR_SDL_RENDERER_HH
+#pragma once
 #include <memory>
 
 #include <SDL3/SDL_render.h>
@@ -14,7 +13,7 @@
 
 namespace sdl
 {
-    enum class RenderReturnType : std::uint8_t
+    enum class render_return_type : std::uint8_t
     {
         SUCCESS,
         FAILURE,
@@ -22,44 +21,44 @@ namespace sdl
     };
 
 
-    class Renderer;
+    class renderer;
 
 
-    class TextEngine
-        : public Resource<TTF_TextEngine, TTF_DestroyRendererTextEngine>
+    class text_engine
+        : public resource<TTF_TextEngine, TTF_DestroyRendererTextEngine>
     {
     public:
-        using Resource::Resource;
+        using resource::resource;
 
 
         [[nodiscard]]
-        TextEngine(Renderer &render);
+        text_engine(renderer &render);
     };
 
 
-    class Renderer : public Resource<SDL_Renderer, SDL_DestroyRenderer>
+    class renderer : public resource<SDL_Renderer, SDL_DestroyRenderer>
     {
     public:
-        using SignalSignature = Signal<RenderReturnType, Renderer &>;
-        using Resource::Resource;
+        using signal_signature = signal<render_return_type, renderer &>;
+        using resource::resource;
 
 
-        Renderer(Window &&window, const std::string &device);
-
-
-        [[nodiscard]]
-        auto get_render_nexts() -> Signal<RenderReturnType, sdl::Renderer &> &;
+        renderer(window &&window, const std::string &device);
 
 
         [[nodiscard]]
-        auto get_window() -> sdl::Window &;
+        auto get_render_nexts() -> signal<render_return_type, sdl::renderer &> &;
 
 
-        auto run_render_queue() -> RenderReturnType;
+        [[nodiscard]]
+        auto get_window() -> sdl::window &;
 
 
-        void set_draw_color(Color color);
-        void set_text_color(Color color);
+        auto run_render_queue() -> render_return_type;
+
+
+        void set_draw_color(color color);
+        void set_text_color(color color);
 
 
         void clear();
@@ -68,19 +67,17 @@ namespace sdl
         void present();
 
 
-        void render_rect(sdl::FRect &area, bool fill = true);
+        void render_rect(sdl::frect &area, bool fill = true);
 
 
         [[nodiscard]]
-        auto get_text_engine() const -> std::shared_ptr<TextEngine>;
+        auto get_text_engine() const -> std::shared_ptr<text_engine>;
 
     private:
-        sdl::Window m_window;
+        sdl::window m_window;
 
-        std::shared_ptr<TextEngine> m_engine;
+        std::shared_ptr<text_engine> m_engine;
 
-        Signal<RenderReturnType, Renderer &> m_render_nexts;
+        signal<render_return_type, renderer &> m_render_nexts;
     };
 }
-
-#endif /* _KEDITOR_SDL_RENDERER_HH */

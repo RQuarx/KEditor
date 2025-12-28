@@ -4,7 +4,7 @@
 
 #include "sdl/instance.hh"
 
-using sdl::Instance;
+using sdl::instance;
 
 
 auto
@@ -14,20 +14,19 @@ sdl::get_error() noexcept -> std::string
 }
 
 
-Instance::Instance(SDL_InitFlags flags)
+instance::instance(SDL_InitFlags flags)
 {
-    if (Instance::initialized) return;
+    if (instance::initialized) return;
 
     if (!SDL_Init(flags))
-        throw InitError { "Failed to initialize SDL: {}", SDL_GetError() };
+        throw init_error { "Failed to initialize SDL: {}", SDL_GetError() };
 
     if (!TTF_Init())
-        throw InitError { "Failed to initialize SDL_TTF: {}",
-                               SDL_GetError() };
+        throw init_error { "Failed to initialize SDL_TTF: {}", SDL_GetError() };
 }
 
 
-Instance::~Instance()
+instance::~instance()
 {
     TTF_Quit();
     SDL_Quit();

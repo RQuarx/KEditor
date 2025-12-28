@@ -1,20 +1,19 @@
 #include "sdl/signal.hh"
 
-using sdl::Connection;
-using sdl::Signal;
+using sdl::connection;
 
 
-Connection::Connection(Connection::signature disconnect_function)
+connection::connection(connection::signature disconnect_function)
     : m_disconnect_fn(std::move(disconnect_function))
 {
 }
 
 
-Connection::~Connection() { disconnect(); }
+connection::~connection() { disconnect(); }
 
 
 void
-Connection::disconnect()
+connection::disconnect()
 {
     if (m_disconnect_fn != nullptr)
     {

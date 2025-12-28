@@ -1,25 +1,24 @@
-#ifndef _KEDITOR_EXCEPTION_HH
-#define _KEDITOR_EXCEPTION_HH
+#pragma once
 #include <format>
 #include <string>
 
 
 namespace kei
 {
-    class Exception : public std::exception
+    class exception : public std::exception
     {
     public:
         template <typename... T_Args>
-        Exception(std::format_string<T_Args...> fmt, T_Args &&...args)
+        exception(std::format_string<T_Args...> fmt, T_Args &&...args)
             : m_string { std::format(fmt, std::forward<T_Args>(args)...) }
         {
         }
 
 
-        Exception() : m_string { "No message" } {}
+        exception() : m_string { "No message" } {}
 
 
-        ~Exception() noexcept override = default;
+        ~exception() noexcept override = default;
 
 
         [[nodiscard]]
@@ -34,21 +33,19 @@ namespace kei
     };
 
 #define EXCEPTION_OBJ(name)                     \
-class name : public kei::Exception /* NOLINT */ \
+class name : public kei::exception /* NOLINT */ \
 {                                               \
 public:                                         \
-    using kei::Exception::Exception;            \
+    using kei::exception::exception;            \
     const std::string_view m_name { #name };    \
 }
 
-    EXCEPTION_OBJ(ConversionError);
-    EXCEPTION_OBJ(ParsingError);
-    EXCEPTION_OBJ(InvalidArgument);
-    EXCEPTION_OBJ(FilesystemError);
-    EXCEPTION_OBJ(InitError);
+    EXCEPTION_OBJ(conversion_error);
+    EXCEPTION_OBJ(parsing_error);
+    EXCEPTION_OBJ(invalid_argument);
+    EXCEPTION_OBJ(filesystem_error);
+    EXCEPTION_OBJ(init_error);
 }
 
 
 #undef EXCEPTION_OBJ
-
-#endif /* _KEDITOR_EXCEPTION_HH */

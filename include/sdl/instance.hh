@@ -1,5 +1,4 @@
-#ifndef _KEDITOR_SDL_INSTANCE_HH
-#define _KEDITOR_SDL_INSTANCE_HH
+#pragma once
 #include <string>
 
 #include <SDL3/SDL_init.h>
@@ -13,43 +12,41 @@ namespace sdl
     auto get_error() noexcept -> std::string;
 
 
-    class Exception : public kei::Exception
+    class exception : public kei::exception
     {
     public:
-        using kei::Exception::Exception;
+        using kei::exception::exception;
 
-        Exception() : kei::Exception("{}", sdl::get_error()) {}
+        exception() : kei::exception("{}", sdl::get_error()) {}
     };
 
 
 #define EXCEPTION_OBJ(name)                \
-class name : public Exception /* NOLINT */ \
+class name : public exception /* NOLINT */ \
 {                                          \
 public:                                    \
-    using Exception::Exception;            \
+    using exception::exception;            \
 }
 
-    EXCEPTION_OBJ(InitError);
+    EXCEPTION_OBJ(init_error);
 
 
 #undef EXCEPTION_OBJ
 
 
-    class Instance
+    class instance
     {
     public:
         inline static bool initialized { false };
 
 
-        explicit Instance(SDL_InitFlags flags);
-        ~Instance();
+        explicit instance(SDL_InitFlags flags);
+        ~instance();
 
-        Instance(Instance &)  = delete;
-        Instance(Instance &&) = delete;
+        instance(instance &)  = delete;
+        instance(instance &&) = delete;
 
-        auto operator=(Instance &)  = delete;
-        auto operator=(Instance &&) = delete;
+        auto operator=(instance &)  = delete;
+        auto operator=(instance &&) = delete;
     };
 }
-
-#endif /* _KEDITOR_SDL_INSTANCE_HH */

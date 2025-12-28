@@ -1,5 +1,4 @@
-#ifndef _KEDITOR_SDL_WINDOW_HH
-#define _KEDITOR_SDL_WINDOW_HH
+#pragma once
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -11,25 +10,25 @@
 
 namespace sdl
 {
-    struct WindowSize
+    struct window_size
     {
         int w;
         int h;
     };
 
 
-    class Window : public Resource<SDL_Window, SDL_DestroyWindow>
+    class window : public resource<SDL_Window, SDL_DestroyWindow>
     {
     public:
-        using Resource::Resource;
+        using resource::resource;
 
 
         [[nodiscard]]
-        Window(const std::string &title, std::uint64_t flags);
+        window(const std::string &title, std::uint64_t flags);
 
 
         [[nodiscard]]
-        auto get_size() -> std::optional<WindowSize>;
+        auto get_size() -> std::optional<window_size>;
 
 
         /**
@@ -46,5 +45,3 @@ namespace sdl
     };
 
 }
-
-#endif /* _KEDITOR_SDL_WINDOW_HH */

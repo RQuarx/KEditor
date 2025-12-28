@@ -1,14 +1,14 @@
 #include "sdl/font.hh"
 #include "sdl/instance.hh"
 
-using sdl::Font;
+using sdl::font;
 
 
-Font::Font(std::filesystem::path font_path, float ptsize)
+font::font(std::filesystem::path font_path, float ptsize)
 {
     m_object = TTF_OpenFont(font_path.c_str(), ptsize);
 
-    if (m_object == nullptr) throw sdl::Exception {};
+    if (m_object == nullptr) throw sdl::exception {};
 
     m_font_path = std::move(font_path);
 
@@ -17,13 +17,13 @@ Font::Font(std::filesystem::path font_path, float ptsize)
 
 
 auto
-Font::get_string_size(std::string_view string) -> sdl::FSize
+font::get_string_size(std::string_view string) -> sdl::fsize
 {
     int w { 0 };
     int h { 0 };
 
     if (!TTF_GetStringSize(m_object, string.data(), string.length(), &w, &h))
-        throw sdl::Exception {};
+        throw sdl::exception {};
 
     return { .w = static_cast<float>(w), .h = static_cast<float>(h) };
 }

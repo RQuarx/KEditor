@@ -1,9 +1,13 @@
-#include <chrono>
-#include <cstring>
 #include <iostream>
+#include <thread>
+#include <utility>
 
-#include "exceptions.hh"
 #include "logger.hh"
+
+
+using kei::log_entry;
+using kei::log_level;
+using kei::logger;
 
 
 namespace
@@ -11,137 +15,159 @@ namespace
     template <typename T> using tpair = std::pair<T, T>;
 
 
-    auto
-    string_to_loglevel(std::string_view str) -> LogLevel
+    enum class log_type : std::uint8_t
     {
-        if (str.contains("debug")) return LogLevel::DEBUG;
-        if (str.contains("info")) return LogLevel::INFO;
-        if (str.contains("warn")) return LogLevel::WARN;
-        if (str.contains("error")) return LogLevel::ERROR;
-        return LogLevel::MAX;
+        file,
+        console,
+    };
+
+
+    [[nodiscard]]
+    auto
+    get_time(const std::chrono::time_point<std::chrono::system_clock> &now)
+        -> std::string
+    {
+        using std::chrono::duration;
+        using ms = std::chrono::milliseconds;
+        using m  = std::chrono::minutes;
+        using s  = std::chrono::seconds;
+
+        auto dura { now.time_since_epoch() };
+        ms   millis { std::chrono::duration_cast<ms>(dura) % 1000 };
+        m    minutes { std::chrono::duration_cast<m>(dura) % 60 };
+        s    seconds { std::chrono::duration_cast<s>(dura) % 60 };
+
+        return std::format("{:02}:{:02}.{:03}", minutes.count(),
+                           seconds.count(), millis.count());
     }
 
 
     /* clang-format off */
-     constexpr std::array<tpair<std::string_view>, 4> LABELS {{
-         { "\033[1;36mdebug\033[0;0;0m", "debug" },
-         { "\033[1;32minfo\033[0;0;0m ", "info " },
-         { "\033[1;33mwarn\033[0;0;0m ", "warn " },
-         { "\033[1;31merror\033[0;0;0m", "error" },
+    constexpr std::array<tpair<std::string_view>, 6> LABELS {{
+         { "\033[38;2;156;163;175mtrace\033[0m", "trace" },
+         { "\033[38;2;59;130;246mdebug\033[0m",  "debug" },
+         { "\033[38;2;34;211;238minfo\033[0m ",  "info " },
+         { "\033[38;2;250;204;21mwarn\033[0m ",  "warn " },
+         { "\033[38;2;239;68;68merror\033[0m",   "error" },
+         { "\033[38;2;192;38;211mfatal\033[0m",  "fatal" }
     }};
     /* clang-format on */
+
+
+    [[nodiscard]]
+    auto
+    format_log(log_type          type,
+               log_level        level,
+               std::string_view time,
+               std::string_view domain,
+               std::string_view message,
+               std::string_view file_name,
+               std::uint32_t    line) -> std::string
+    {
+        const std::string_view &label_colored { LABELS[level].first };
+        const std::string_view &label_raw { LABELS[level].second };
+
+        if (level >= log_level::error)
+        {
+            if (type == log_type::file)
+                return std::format("{} [{} at {}:{}]: {}", time, label_raw,
+                                   file_name, line, message);
+
+            return std::format("{} [{} at \033[38;2;70;172;173m{}:{}\033[0m]: "
+                               "\033[1m{}\033[0m",
+                               time, label_colored, file_name, line, message);
+        }
+
+        if (type == log_type::file)
+            return std::format("{} [{} at {}]: {}", time, label_raw, domain,
+                               message);
+
+        return std::format("{} [{} at \033[38;2;70;172;173m{}\033[0m]: "
+                           "\033[1m{}\033[0m",
+                           time, label_colored, domain, message);
+    }
 }
 
 
-Logger::Logger(std::string_view log_level, const std::string &log_file)
+logger::logger(log_level threshold_level, const std::filesystem::path &log_file)
+    : m_threshold { threshold_level }
 {
-    set_log_level(log_level);
-    set_log_file(log_file);
+    if (!log_file.empty()) m_log_file = { log_file, std::ios::app };
+    m_worker = std::jthread { [this](std::stop_token st) -> void
+                              { process_queue(std::move(st)); } };
+}
+
+
+logger::~logger()
+{
+    m_worker.request_stop();
+    m_cv.notify_one();
 }
 
 
 auto
-Logger::set_log_level(std::string_view log_level) -> Logger &
+logger::operator[](log_level            level,
+                   std::string_view     domain,
+                   std::source_location source) noexcept -> log_entry
 {
-    if (log_level.empty()) goto err;
-
-    try
-    {
-        auto level { static_cast<std::uint32_t>(LogLevel::WARN) };
-
-        if (std::from_chars(log_level.begin(), log_level.end(), level).ec
-            != std::errc {})
-            throw kei::InvalidArgument { "" };
-
-        if (static_cast<LogLevel>(level) >= LogLevel::MAX)
-        {
-            log<LogLevel::WARN>("Log level too large, using default level");
-            goto err;
-        }
-
-        m_threshold_level = static_cast<LogLevel>(level);
-    }
-    catch (...)
-    {
-        LogLevel level { string_to_loglevel(log_level) };
-
-        if (level == LogLevel::MAX)
-        {
-            log<LogLevel::WARN>("Invalid log level {}, using default level",
-                                log_level);
-            goto err;
-        }
-
-        m_threshold_level = level;
-    }
-
-    return *this;
-
-err:
-    m_threshold_level = LogLevel::WARN;
-    return *this;
-}
-
-
-auto
-Logger::set_log_file(const std::string &log_file) -> Logger &
-{
-    if (log_file.empty()) return *this;
-
-    m_log_file.open(log_file, std::ios_base::app);
-
-    if (m_log_file.fail() && !m_log_file.eof())
-    {
-        log<LogLevel::ERROR>("Failed to open {}: {}", log_file,
-                             std::strerror(errno));
-
-        throw kei::FilesystemError { "Failed to open log file {}", log_file };
-    }
-
-    return *this;
+    return log_entry { level < m_threshold ? nullptr : this, level, domain,
+                       source };
 }
 
 
 void
-Logger::write(LogLevel level, std::string_view domain, const std::string &msg)
+logger::process_queue(std::stop_token stop_token)
 {
-    tpair<std::string_view> labels { LABELS[static_cast<size_t>(level)] };
-
-    std::string label { std::format("{} {} at \033[38;2;70;172;173m{}\033[0;0m",
-                                    get_time(), labels.first, domain) };
-
-    if (m_log_file.is_open())
+    while (!stop_token.stop_requested() || !m_log_queue.empty())
     {
-        std::string file_label { std::format("{} at {}", get_time(),
-                                             labels.second, domain) };
+        std::unique_lock lock { m_queue_mtx };
 
-        m_log_file << std::format("[{}]: {}", file_label, msg) << '\n';
-        m_log_file.flush();
+        m_cv.wait(
+            lock, [&] -> bool
+            { return stop_token.stop_requested() || !m_log_queue.empty(); });
+
+        while (!m_log_queue.empty())
+        {
+            const auto obj { std::move(m_log_queue.front()) };
+            m_log_queue.pop();
+
+            lock.unlock();
+
+            const std::string time_str { get_time(obj.time) };
+
+            std::string formatted_console { format_log(
+                log_type::console, obj.level, time_str, obj.domain, obj.message,
+                obj.source.file_name(), obj.source.line()) };
+
+            std::println(std::clog, "{}", formatted_console);
+
+            if (!m_log_file.is_open())
+            {
+                lock.lock();
+                continue;
+            }
+
+            std::string formatted_file { format_log(
+                log_type::file, obj.level, time_str, obj.domain, obj.message,
+                obj.source.file_name(), obj.source.line()) };
+
+            std::println(m_log_file, "{}", formatted_file);
+            m_log_file.flush();
+
+            lock.lock();
+        }
     }
-
-    if (level < m_threshold_level) return;
-
-    std::size_t label_len { label.length() };
-    m_longest_label = std::max(m_longest_label, label_len);
-
-    std::println(std::cerr, "[{}]: {}\033[1m{}\033[0m", label,
-                 std::string(m_longest_label - label_len, ' '), msg);
 }
 
 
-auto
-Logger::get_time() -> std::string
+log_entry::log_entry(logger              *parent,
+                     log_level            level,
+                     std::string_view     domain,
+                     std::source_location source)
+    : m_parent { parent }, m_obj { .time    = std::chrono::system_clock::now(),
+                                   .level   = level,
+                                   .domain  = domain,
+                                   .source  = source,
+                                   .message = "" }
 {
-    using std::chrono::duration;
-    using ms = std::chrono::milliseconds;
-    using m  = std::chrono::minutes;
-    using s  = std::chrono::seconds;
-
-    duration now { std::chrono::system_clock::now().time_since_epoch() };
-    ms       millis { std::chrono::duration_cast<ms>(now) % 1000 };
-    m        minutes { std::chrono::duration_cast<m>(now) % 60 };
-    s        seconds { std::chrono::duration_cast<s>(now) % 60 };
-
-    return std::format("{:02}:{:02}.{:03}", minutes.count(), seconds.count(),
-                       millis.count());
 }

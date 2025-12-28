@@ -1,29 +1,31 @@
 #include "editor/workspace/buffer.hh"
 
-using enum LogLevel;
+#define DOMAIN "editor::workspace::buffer"
+
+using kei::log_level;
 
 
-Buffer::Buffer(Config *&config, Logger *&logger, model::PieceTable pt)
+buffer::buffer(kei::config &config, kei::logger &logger, model::piece_table pt)
     : m_config { config }, m_logger { logger }, m_buffer { std::move(pt) }
 {
 }
 
 
 auto
-Buffer::open_file(std::filesystem::path path) -> bool
+buffer::open_file(std::filesystem::path path) -> bool
 {
-    m_logger->log<INFO>("Opening a new file {}", path.string());
+    m_logger[log_level::info, DOMAIN]("Opening a new file {}", path.string());
 
     if (!std::filesystem::exists(path))
     {
-        m_logger->log<ERROR>("Tried opening a non-existent path {}",
-                             path.string());
+        m_logger[log_level::error, DOMAIN](
+            "Tried opening a non-existent path {}", path.string());
         return false;
     }
 
     if (!std::filesystem::is_regular_file(path))
     {
-        m_logger->log<ERROR>("Tried opening a non-regular file");
+        m_logger[log_level::error, DOMAIN]("Tried opening a non-regular file");
         return false;
     }
 
@@ -33,13 +35,12 @@ Buffer::open_file(std::filesystem::path path) -> bool
 
     try
     {
-        m_buffer = model::PieceTable::from_file(path);
+        m_buffer = model::piece_table::from_file(path);
     }
-    catch (const kei::Exception &e)
+    catch (const kei::exception &e)
     {
-        m_logger->log<ERROR>("Failed to open file {}: {}", m_file_path.string(),
-                             e.what());
-
+        m_logger[log_level::error, DOMAIN]("Failed to open file {}: {}",
+                                           m_file_path.string(), e.what());
         return false;
     }
 
@@ -48,53 +49,54 @@ Buffer::open_file(std::filesystem::path path) -> bool
 
 
 auto
-Buffer::set_rect(sdl::FRect rect) -> bool
+buffer::set_rect(sdl::frect rect) -> bool
 {
-    sdl::Color color;
+    sdl::color color;
 
     try
     {
-        color = sdl::Color { m_config->get<std::string>("editor.color.bg") };
+        color = sdl::color { m_config.get<std::string>("editor.color.bg") };
     }
-    catch (const kei::Exception &e)
+    catch (const kei::exception &e)
     {
-        m_logger->log<ERROR>("Invalid color on \"editor.color.bg\"");
+        m_logger[log_level::error, DOMAIN](
+            "Invalid color on \"editor.color.bg\"");
         return false;
     }
 
-    m_box = std::make_unique<widget::Box>(rect, color);
+    m_box = std::make_unique<widget::box>(rect, color);
     return true;
 }
 
 
 auto
-Buffer::get_rect() const noexcept -> widget::Box *
+buffer::get_rect() const noexcept -> widget::box *
 {
     return m_box.get();
 }
 
 
 auto
-Buffer::add_event_callbacks(sdl::EventHandler &handler) -> bool
+buffer::add_event_callbacks(sdl::event_handler &handler) -> bool
 {
     handler.connect(SDL_EVENT_MOUSE_BUTTON_DOWN, this,
-                    &Buffer::mf_on_mouse_button_down);
+                    &buffer::mf_on_mouse_button_down);
     return true;
 }
 
 
 auto
-Buffer::render(sdl::Renderer &render) -> bool
+buffer::render(sdl::renderer &render) -> bool
 {
     return true;
 }
 
 
 auto
-Buffer::mf_on_mouse_button_down(const sdl::Event &event, sdl::Renderer &render)
-    -> sdl::EventReturnType
+buffer::mf_on_mouse_button_down(const sdl::event &event, sdl::renderer &render)
+    -> sdl::event_return_type
 {
-    sdl::FPoint click_position { event.button.x, event.button.y };
+    sdl::fpoint click_position { event.button.x, event.button.y };
 
     m_focused = sdl::is_point_in_rect(m_box->get_area(false), click_position);
 
@@ -102,11 +104,12 @@ Buffer::mf_on_mouse_button_down(const sdl::Event &event, sdl::Renderer &render)
     {
         render.get_window().set_text_input_state(m_focused);
     }
-    catch (const kei::Exception &e)
+    catch (const kei::exception &e)
     {
-        m_logger->log<ERROR>("Failed to set text input state: {}", e.what());
-        return sdl::EventReturnType::FAILURE;
+        m_logger[log_level::error, DOMAIN]("Failed to set text input state: {}",
+                                           e.what());
+        return sdl::event_return_type::FAILURE;
     }
 
-    return sdl::EventReturnType::CONTINUE;
+    return sdl::event_return_type::CONTINUE;
 }

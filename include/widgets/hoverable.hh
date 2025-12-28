@@ -1,45 +1,60 @@
-#ifndef _KEDITOR_WIDGETS_HOVERABLE_HH
-#define _KEDITOR_WIDGETS_HOVERABLE_HH
-#include "widgets/box.hh"
+#pragma once
+#include "widgets/base.hh"
 
 
 namespace widget
 {
-    class Hoverable : public Box
+    class hoverable : public base
     {
+        enum class fade_state : std::uint8_t
+        {
+            none,
+            to_hover, /* fade-in */
+            to_normal /* fade-out */
+        };
+
     public:
-        static constexpr std::uint8_t BRIGHTNESS_FACTOR { 50 };
-        static constexpr std::int64_t FADEOUT_TIME_MS { 500 };
+        hoverable(sdl::frect rect) noexcept;
 
 
-        Hoverable(sdl::FRect                area,
-                  sdl::Color                color,
-                  std::optional<sdl::Color> border_color = std::nullopt);
+        auto add_event_callbacks(sdl::event_handler &handler) noexcept
+            -> hoverable & override;
+        auto render(sdl::renderer &render) -> hoverable & override;
 
 
-        void add_event_callbacks(sdl::EventHandler &handler) override;
+        auto set_fadeout_time(std::uint64_t ms) noexcept -> hoverable &;
+        auto set_fadein_time(std::uint64_t ms) noexcept -> hoverable &;
+        auto set_hover_color(sdl::color color) noexcept -> hoverable &;
 
-
-        void render(sdl::Renderer &render) override;
-
-    private:
-        sdl::Color m_hovered_color;
-        sdl::Color m_current_color;
-
-        std::uint64_t m_prev_frame_time { 0 };
-
-        bool m_hovered;
-        bool m_fading_out;
-
-        float m_fade_elapsed;
+        [[nodiscard]] auto get_fadeout_time() const noexcept -> std::uint64_t;
+        [[nodiscard]] auto get_fadein_time() const noexcept -> std::uint64_t;
+        [[nodiscard]] auto get_hover_color() const noexcept -> sdl::color;
+        [[nodiscard]] auto get_hovered() const noexcept -> bool;
 
     protected:
-        auto mf_on_mouse_motion(const sdl::Event &event, sdl::Renderer &render)
-            -> sdl::EventReturnType;
+        sdl::color mp_hover_color;
+        bool       mp_hovered;
+
+        std::uint64_t mp_fadeout_time_ms;
+        std::uint64_t mp_fadein_time_ms;
+
+    private:
+        fade_state m_fade_state;
+
+        sdl::color m_current_color;
+        sdl::color m_fade_start_color;
+        sdl::color m_fade_target_color;
+
+        std::uint64_t m_previous_frame_time;
+        float         m_fade_elapsed;
+
+        sdl::connection m_OMM_connection;
 
 
-        void mf_render_fade(sdl::Renderer &render);
+        auto mf_on_mouse_motion(const sdl::event &event, sdl::renderer &render)
+            -> sdl::event_return_type;
+
+
+        void mf_render_fade(sdl::renderer &render);
     };
 }
-
-#endif /* _KEDITOR_WIDGETS_HOVERABLE_HH */

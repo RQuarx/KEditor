@@ -1,5 +1,4 @@
-#ifndef _KEDITOR_SDL_SIGNAL_HH
-#define _KEDITOR_SDL_SIGNAL_HH
+#pragma once
 #include <atomic>
 #include <functional>
 #include <list>
@@ -9,23 +8,22 @@
 
 namespace sdl
 {
-    template <typename T_Ret, typename... T_Params> class Signal;
+    template <typename T_Ret, typename... T_Params> class signal;
 
-    class Connection
+    class connection
     {
     public:
         using signature = std::function<void()>;
 
-        Connection()                       = default;
-        Connection(const Connection &)     = delete;
-        Connection(Connection &&) noexcept = default;
+        connection()                       = default;
+        connection(const connection &)     = delete;
+        connection(connection &&) noexcept = default;
 
-        auto operator=(const Connection &) -> Connection &     = delete;
-        auto operator=(Connection &&) noexcept -> Connection & = default;
+        auto operator=(const connection &) -> connection &     = delete;
+        auto operator=(connection &&) noexcept -> connection & = default;
 
-        explicit Connection(signature disconnect_function);
-        ~Connection();
-
+        explicit connection(signature disconnect_function);
+        ~connection();
 
         void disconnect();
 
@@ -34,9 +32,9 @@ namespace sdl
     };
 
 
-    template <typename T_Ret, typename... T_Params> class Signal
+    template <typename T_Ret, typename... T_Params> class signal
     {
-        struct SlotWrapper
+        struct slot_wrapper
         {
             std::function<T_Ret(T_Params...)> slot;
             std::size_t                       id;
@@ -46,14 +44,14 @@ namespace sdl
         using slot_type = std::function<T_Ret(T_Params...)>;
 
 
-        Signal() = default;
-        ~Signal() { clear(); }
+        signal() = default;
+        ~signal() { clear(); }
 
-        Signal(const Signal &)                     = delete;
-        auto operator=(const Signal &) -> Signal & = delete;
+        signal(const signal &)                     = delete;
+        auto operator=(const signal &) -> signal & = delete;
 
 
-        Signal(Signal &&other) noexcept
+        signal(signal &&other) noexcept
         {
             std::scoped_lock lock(other.m_mutex);
             m_slots   = std::move(other.m_slots);
@@ -62,7 +60,7 @@ namespace sdl
 
 
         auto
-        operator=(Signal &&other) noexcept -> Signal &
+        operator=(signal &&other) noexcept -> signal &
         {
             if (this == &other) return *this;
 
@@ -74,14 +72,14 @@ namespace sdl
 
 
         auto
-        connect(slot_type slot) -> Connection
+        connect(slot_type slot) -> connection
         {
             std::scoped_lock lock(m_mutex);
 
             size_t id { m_next_id++ };
             m_slots.emplace_back(slot, id);
 
-            return Connection(
+            return connection(
                 [this, id] -> auto
                 {
                     std::scoped_lock lock { m_mutex };
@@ -93,7 +91,7 @@ namespace sdl
 
         template <typename T_Func, typename... T_FuncParams>
         auto
-        connect(T_Func &&f, T_FuncParams &&...extra) -> Connection
+        connect(T_Func &&f, T_FuncParams &&...extra) -> connection
         {
             auto bound_slot { [f = std::forward<T_Func>(f),
                                extra...](T_Params... params) -> T_Ret
@@ -109,7 +107,7 @@ namespace sdl
         auto
         connect(T_Instance *instance,
                 T_Method  &&mem_func,
-                T_MethodParams &&...extra) -> Connection
+                T_MethodParams &&...extra) -> connection
         {
             auto bound_slot {
                 [instance, mem_func = std::forward<T_Method>(mem_func),
@@ -126,7 +124,7 @@ namespace sdl
         auto
         connect(const T_Instance *instance,
                 T_Method        &&mem_func,
-                T_MethodParams &&...extra) -> Connection
+                T_MethodParams &&...extra) -> connection
         {
             auto bound_slot {
                 [instance, mem_func = std::forward<T_Method>(mem_func),
@@ -205,7 +203,7 @@ namespace sdl
 
         [[nodiscard]]
         auto
-        get_slots() const -> std::list<SlotWrapper>
+        get_slots() const -> std::list<slot_wrapper>
         {
             return m_slots;
         }
@@ -213,11 +211,8 @@ namespace sdl
 
     private:
         mutable std::mutex       m_mutex;
-        std::list<SlotWrapper>   m_slots;
+        std::list<slot_wrapper>   m_slots;
         bool                     m_enabled { true };
         std::atomic<std::size_t> m_next_id { 0 };
     };
 }
-
-
-#endif /* _KEDITOR_SDL_SIGNAL_HH */

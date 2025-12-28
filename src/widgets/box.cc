@@ -1,126 +1,20 @@
 #include "widgets/box.hh"
 
-using widget::Box;
+using widget::box;
 
 
-Box::Box(sdl::FRect                widget_area,
-         sdl::Color                widget_color,
-         std::optional<sdl::Color> border_color) noexcept
-    : m_area(widget_area), m_color(widget_color), m_border_color(border_color),
-      m_border_width_px(1), m_visible(true)
+box::box(sdl::frect rect) noexcept :
+    base { rect }
 {
 }
 
 
 auto
-Box::get_area(bool include_border) const noexcept -> sdl::FRect
+box::render(sdl::renderer &render) -> box &
 {
-    if (include_border) return m_area;
-    return { m_area.x + m_border_width_px, m_area.y + m_border_width_px,
-             m_area.w - (m_border_width_px * 2),
-             m_area.h - (m_border_width_px * 2) };
-}
+    if (!mp_visible) return *this;
 
-
-auto
-Box::get_color() const noexcept -> sdl::Color
-{
-    return m_color;
-}
-
-
-auto
-Box::get_border_color() const noexcept -> std::optional<sdl::Color>
-{
-    return m_border_color;
-}
-
-
-void
-Box::set_position(sdl::FPoint new_position) noexcept
-{
-    m_area.x = new_position.x;
-    m_area.y = new_position.y;
-}
-
-
-void
-Box::set_size(sdl::FSize new_size) noexcept
-{
-    m_area.w = new_size.w;
-    m_area.h = new_size.h;
-}
-
-
-void
-Box::set_color(sdl::Color new_color) noexcept
-{
-    m_color = new_color;
-}
-
-
-void
-Box::set_border_color(sdl::Color new_color) noexcept
-{
-    m_border_color = new_color;
-}
-
-
-void
-Box::set_border_width(unsigned int px) noexcept
-{
-    m_border_width_px = px;
-}
-
-
-auto
-Box::get_border_width() const noexcept -> unsigned int
-{
-    return m_border_width_px;
-}
-
-
-[[nodiscard]]
-auto
-Box::is_visible() const noexcept -> bool
-{
-    return m_visible;
-}
-
-
-void
-Box::set_visible(bool visible) noexcept
-{
-    m_visible = visible;
-}
-
-
-void
-Box::add_event_callbacks(sdl::EventHandler & /* event */)
-{
-}
-
-
-void
-Box::render(sdl::Renderer &render)
-{
-    if (!m_visible) return;
-
-    if (!m_border_color)
-    {
-        render.set_draw_color(m_color);
-        render.render_rect(m_area);
-
-        return;
-    }
-
-    sdl::FRect inside_rect { m_area.x + m_border_width_px,
-                             m_area.y + m_border_width_px,
-                             m_area.w - (m_border_width_px * 2),
-                             m_area.h - (m_border_width_px * 2) };
-
-    render.set_draw_color(*m_border_color);
-    render.render_rect(m_area, false);
-    render.set_draw_color(m_color);
-    render.render_rect(inside_rect);
+    render.set_draw_color(mp_color);
+    render.render_rect(mp_rect);
+    return *this;
 }

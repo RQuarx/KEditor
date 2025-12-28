@@ -1,5 +1,4 @@
-#ifndef _KEDITOR_SDL_RESOURCE_HH
-#define _KEDITOR_SDL_RESOURCE_HH
+#pragma once
 
 
 namespace sdl
@@ -11,30 +10,30 @@ namespace sdl
      * @tparam T_Destructor The `SDL_Destroy*` function for the object.
      */
     template <typename T_SDLObject, void (*T_Destructor)(T_SDLObject *)>
-    class Resource
+    class resource
     {
     public:
-        constexpr Resource() : m_object(nullptr) {}
+        constexpr resource() : m_object { nullptr } {}
 
-        explicit Resource(T_SDLObject *object) : m_object(object) {}
+        explicit resource(T_SDLObject *object) : m_object(object) {}
 
-        ~Resource()
+        ~resource()
         {
             if (m_object) T_Destructor(m_object);
         }
 
-        Resource(const Resource &)                     = delete;
-        auto operator=(const Resource &) -> Resource & = delete;
+        resource(const resource &)                     = delete;
+        auto operator=(const resource &) -> resource & = delete;
 
 
-        Resource(Resource &&other) noexcept : m_object(other.m_object)
+        resource(resource &&other) noexcept : m_object(other.m_object)
         {
             other.m_object = nullptr;
         }
 
 
         auto
-        operator=(Resource &&other) noexcept -> Resource &
+        operator=(resource &&other) noexcept -> resource &
         {
             if (this != &other)
             {
@@ -73,5 +72,3 @@ namespace sdl
         T_SDLObject *m_object;
     };
 }
-
-#endif /* _KEDITOR_SDL_RESOURCE_HH */

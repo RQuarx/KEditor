@@ -1,5 +1,4 @@
-#ifndef _KEDITOR_MODEL_PIECE_TABLE_HH
-#define _KEDITOR_MODEL_PIECE_TABLE_HH
+#pragma once
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -7,7 +6,7 @@
 
 namespace model
 {
-    enum class BufferType : std::uint8_t
+    enum class buffer_type : std::uint8_t
     {
         ADD,
         ORIGINAL
@@ -16,14 +15,14 @@ namespace model
 
     struct Piece
     {
-        BufferType type;
+        buffer_type type;
 
         std::size_t offset;
         std::size_t length;
     };
 
 
-    struct EditNode
+    struct edit_node
     {
         enum class Type : std::uint8_t
         {
@@ -34,20 +33,20 @@ namespace model
         std::size_t position;
         std::string text;
 
-        EditNode *parent { nullptr };
+        edit_node *parent { nullptr };
 
-        std::vector<EditNode> children;
+        std::vector<edit_node> children;
     };
 
 
-    class PieceTable
+    class piece_table
     {
     public:
         [[nodiscard]]
-        static auto from_file(const std::string &path) -> PieceTable;
+        static auto from_file(const std::string &path) -> piece_table;
 
 
-        PieceTable(std::string text);
+        piece_table(std::string text);
 
         void insert(std::size_t position, std::string text);
         void erase(std::size_t position, std::size_t length);
@@ -67,8 +66,8 @@ namespace model
         std::vector<Piece> m_pieces;
 
         /* undo tree shit */
-        std::vector<EditNode> m_root_edits;
-        EditNode             *m_current_edit { nullptr };
+        std::vector<edit_node> m_root_edits;
+        edit_node             *m_current_edit { nullptr };
 
 
         void mf_do_insert(std::size_t position, const std::string &text);
@@ -78,5 +77,3 @@ namespace model
         auto mf_get_total_length() const -> std::size_t;
     };
 }
-
-#endif /* _KEDITOR_MODEL_PIECE_TABLE_HH */

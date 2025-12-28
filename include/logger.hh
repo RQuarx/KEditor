@@ -1,76 +1,110 @@
-#ifndef _KEDITOR_LOG_HH
-#define _KEDITOR_LOG_HH
-#include <format>
+#pragma once
+#include <condition_variable>
+#include <filesystem>
 #include <fstream>
+#include <mutex>
+#include <queue>
 #include <source_location>
+#include <thread>
 
 
-enum class LogLevel : unsigned char
+namespace kei
 {
-    DEBUG = 0,
-    INFO  = 1,
-    WARN  = 2,
-    ERROR = 3,
-    MAX   = 4
-};
-
-
-class Logger
-{
-public:
-    template <typename... T_Args> struct StringSource
+    enum log_level : std::uint8_t
     {
-        std::format_string<T_Args...> fmt;
-        std::string_view              func;
+        trace,
+        debug,
+        info,
+        warn,
+        error,
+        fatal,
+    };
 
-        constexpr StringSource(const char                 *fmt,
-                               const std::source_location &source
-                               = std::source_location::current())
-            : fmt(fmt), func(source.function_name())
+
+    class log_entry;
+    class logger
+    {
+        friend log_entry;
+
+        struct log_object
         {
+            std::chrono::time_point<std::chrono::system_clock> time;
+            log_level                                          level;
+            std::string_view                                   domain;
+            std::source_location                               source;
+            std::string                                        message;
+        };
+
+    public:
+        logger(log_level                    threshold_level,
+               const std::filesystem::path &log_file = "");
+        ~logger();
+
+
+        [[nodiscard]]
+        auto operator[](log_level            level,
+                        std::string_view     domain,
+                        std::source_location source
+                        = std::source_location::current()) noexcept
+            -> log_entry;
+
+    private:
+        log_level     m_threshold;
+        std::ofstream m_log_file;
+
+        std::queue<log_object> m_log_queue;
+        std::mutex             m_queue_mtx;
+
+        std::condition_variable m_cv;
+        std::jthread            m_worker;
+
+
+        void process_queue(std::stop_token stop_token);
+
+
+        template <typename... T_Args>
+        void
+        push_log(log_object &&object)
+        {
+            {
+                std::scoped_lock lock { m_queue_mtx };
+                m_log_queue.push(std::move(object));
+            }
+            m_cv.notify_one();
         }
     };
 
-    template <typename... T_Args>
-    using StringSource_t = std::type_identity_t<StringSource<T_Args...>>;
 
-
-    Logger(std::string_view log_level, const std::string &log_file = "");
-
-
-
-    template <LogLevel T_Level, typename... T_Args>
-    void
-    log(StringSource_t<T_Args...> fmt, T_Args &&...args)
+    class log_entry
     {
-        std::string_view func { fmt.func.substr(0, fmt.func.find('(')) };
+        friend logger;
 
-        for (char delim : " > ")
-            if (auto pos { func.find(delim) }; pos != std::string_view::npos)
-                func = func.substr(pos + 1);
+    public:
+        log_entry(const log_entry &)                     = delete;
+        auto operator=(const log_entry &) -> log_entry & = delete;
 
-        write(T_Level, func,
-              std::format(fmt.fmt, std::forward<T_Args>(args)...));
-    }
-
-private:
-    std::ofstream m_log_file;
-    LogLevel      m_threshold_level { LogLevel::WARN };
-    std::size_t   m_longest_label { 0 };
+        log_entry(log_entry &&)                     = default;
+        auto operator=(log_entry &&) -> log_entry & = default;
 
 
-    auto set_log_level(std::string_view log_level) -> Logger &;
+        template <typename... T_Args>
+        void
+        operator()(std::format_string<T_Args...> fmt, T_Args &&...args)
+        {
+            if (m_parent == nullptr) return;
+
+            m_obj.message = std::format(fmt, std::forward<T_Args>(args)...);
+            m_parent->push_log(std::move(m_obj));
+        }
+
+    private:
+        logger            *m_parent;
+        logger::log_object m_obj;
 
 
-    auto set_log_file(const std::string &log_file) -> Logger &;
-
-
-    void write(LogLevel level, std::string_view domain, const std::string &msg);
-
-
-    [[nodiscard]]
-    static auto get_time() -> std::string;
-};
-
-
-#endif /* _KEDITOR_LOG_HH */
+        log_entry(logger              *parent,
+                  log_level            level,
+                  std::string_view     domain,
+                  std::source_location source);
+    };
+}

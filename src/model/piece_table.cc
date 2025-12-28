@@ -4,33 +4,33 @@
 #include "model/piece_table.hh"
 #include "utils.hh"
 
-using model::PieceTable;
+using model::piece_table;
 
 
 auto
-PieceTable::from_file(const std::string &path) -> PieceTable
+piece_table::from_file(const std::string &path) -> piece_table
 {
     auto file { kei::open_file<std::ifstream>(path) };
 
     std::ostringstream oss;
     oss << file.rdbuf();
 
-    return PieceTable { oss.str() };
+    return piece_table { oss.str() };
 }
 
 
-PieceTable::PieceTable(std::string text) : m_original(std::move(text))
+piece_table::piece_table(std::string text) : m_original(std::move(text))
 {
-    m_pieces.emplace_back(BufferType::ORIGINAL, 0, m_original.length());
+    m_pieces.emplace_back(buffer_type::ORIGINAL, 0, m_original.length());
 }
 
 
 void
-PieceTable::insert(std::size_t position, std::string text)
+piece_table::insert(std::size_t position, std::string text)
 {
-    EditNode node;
+    edit_node node;
 
-    node.type     = EditNode::Type::INSERT;
+    node.type     = edit_node::Type::INSERT;
     node.position = position;
     node.text     = std::move(text);
     node.parent   = m_current_edit;
@@ -51,13 +51,13 @@ PieceTable::insert(std::size_t position, std::string text)
 
 
 void
-PieceTable::erase(std::size_t position, std::size_t length)
+piece_table::erase(std::size_t position, std::size_t length)
 {
     std::string deleted_text { get_text(position, length) };
 
-    EditNode node;
+    edit_node node;
 
-    node.type     = EditNode::Type::DELETE;
+    node.type     = edit_node::Type::DELETE;
     node.position = position;
     node.text     = std::move(deleted_text);
     node.parent   = m_current_edit;
@@ -78,11 +78,11 @@ PieceTable::erase(std::size_t position, std::size_t length)
 
 
 void
-PieceTable::undo()
+piece_table::undo()
 {
     if (m_current_edit == nullptr) return;
 
-    if (m_current_edit->type == EditNode::Type::INSERT)
+    if (m_current_edit->type == edit_node::Type::INSERT)
         mf_do_erase(m_current_edit->position, m_current_edit->text.length());
     else
         mf_do_insert(m_current_edit->position, m_current_edit->text);
@@ -92,7 +92,7 @@ PieceTable::undo()
 
 
 void
-PieceTable::redo(std::size_t branch_index)
+piece_table::redo(std::size_t branch_index)
 {
     if (m_current_edit == nullptr)
     {
@@ -100,7 +100,7 @@ PieceTable::redo(std::size_t branch_index)
         {
             m_current_edit = &m_root_edits[branch_index];
 
-            if (m_current_edit->type == EditNode::Type::INSERT)
+            if (m_current_edit->type == edit_node::Type::INSERT)
                 mf_do_insert(m_current_edit->position, m_current_edit->text);
             else
                 mf_do_erase(m_current_edit->position,
@@ -111,7 +111,7 @@ PieceTable::redo(std::size_t branch_index)
     {
         m_current_edit = &m_current_edit->children[branch_index];
 
-        if (m_current_edit->type == EditNode::Type::INSERT)
+        if (m_current_edit->type == edit_node::Type::INSERT)
             mf_do_insert(m_current_edit->position, m_current_edit->text);
         else
             mf_do_erase(m_current_edit->position,
@@ -121,7 +121,7 @@ PieceTable::redo(std::size_t branch_index)
 
 
 auto
-PieceTable::get_text(std::size_t position, std::size_t length) const
+piece_table::get_text(std::size_t position, std::size_t length) const
     -> std::string
 {
     std::size_t total_length { mf_get_total_length() };
@@ -149,7 +149,7 @@ PieceTable::get_text(std::size_t position, std::size_t length) const
         std::size_t len_in_piece { std::min(piece.length - start_in_piece,
                                             length - result.length()) };
 
-        const std::string &buffer { (piece.type == BufferType::ORIGINAL)
+        const std::string &buffer { (piece.type == buffer_type::ORIGINAL)
                                         ? m_original
                                         : m_add };
 
@@ -164,7 +164,7 @@ PieceTable::get_text(std::size_t position, std::size_t length) const
 
 
 void
-PieceTable::mf_do_insert(std::size_t position, const std::string &text)
+piece_table::mf_do_insert(std::size_t position, const std::string &text)
 {
     std::size_t add_offset { m_add.size() };
     std::size_t current_pos { 0 };
@@ -181,7 +181,7 @@ PieceTable::mf_do_insert(std::size_t position, const std::string &text)
         std::size_t offset_in_piece { position - current_pos };
         if (offset_in_piece == 0)
         {
-            m_pieces.insert(it, Piece { .type   = BufferType::ADD,
+            m_pieces.insert(it, Piece { .type   = buffer_type::ADD,
                                         .offset = add_offset,
                                         .length = text.length() });
             return;
@@ -196,7 +196,7 @@ PieceTable::mf_do_insert(std::size_t position, const std::string &text)
             it->length    = offset_in_piece;
 
             it++;
-            m_pieces.insert(it, Piece { .type   = BufferType::ADD,
+            m_pieces.insert(it, Piece { .type   = buffer_type::ADD,
                                         .offset = add_offset,
                                         .length = text.length() });
             m_pieces.insert(it, after);
@@ -206,12 +206,12 @@ PieceTable::mf_do_insert(std::size_t position, const std::string &text)
         current_pos += it->length;
     }
 
-    m_pieces.emplace_back(BufferType::ADD, add_offset, text.length());
+    m_pieces.emplace_back(buffer_type::ADD, add_offset, text.length());
 }
 
 
 void
-PieceTable::mf_do_erase(std::size_t position, std::size_t length)
+piece_table::mf_do_erase(std::size_t position, std::size_t length)
 {
     std::size_t current_pos { 0 };
     auto        it { m_pieces.begin() };
@@ -270,7 +270,7 @@ PieceTable::mf_do_erase(std::size_t position, std::size_t length)
 
 
 auto
-PieceTable::mf_get_total_length() const -> std::size_t
+piece_table::mf_get_total_length() const -> std::size_t
 {
     std::size_t total { 0 };
     for (const auto &piece : m_pieces) total += piece.length;

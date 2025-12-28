@@ -1,5 +1,4 @@
-#ifndef _KEDITOR_SDL_TEXT_HH
-#define _KEDITOR_SDL_TEXT_HH
+#pragma once
 #include <SDL3_ttf/SDL_ttf.h>
 
 #include "sdl/font.hh"
@@ -10,19 +9,19 @@
 
 namespace sdl
 {
-    class Text : public Resource<TTF_Text, TTF_DestroyText>
+    class text : public resource<TTF_Text, TTF_DestroyText>
     {
     public:
-        using Resource::Resource;
+        using resource::resource;
 
 
-        Text(Renderer &render, Font &font, std::string string);
+        text(renderer &render, font &font, std::string string);
 
 
-        void set_color(Color color);
+        void set_color(color color);
 
 
-        void render(FPoint position);
+        void render(fpoint position);
 
 
         [[nodiscard]]
@@ -33,5 +32,3 @@ namespace sdl
         std::string m_string;
     };
 }
-
-#endif /* _KEDITOR_SDL_TEXT_HH */

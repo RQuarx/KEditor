@@ -1,6 +1,4 @@
-#ifndef _KEDITOR_UTILS_HH
-#define _KEDITOR_UTILS_HH
-#include <cstring>
+#pragma once
 #include <fstream>
 #include <string>
 
@@ -24,11 +22,21 @@ namespace kei
     {
         T_FStream stream { path };
 
-        if (!stream.is_open())
-            throw kei::FilesystemError { "I/O Error" };
+        if (!stream.is_open()) throw kei::filesystem_error { "I/O Error" };
 
         return stream;
     }
-}
 
-#endif /* _KEDITOR_UTILS_HH */
+
+    template <typename T_IntType>
+    [[nodiscard]]
+    auto
+    to_int(std::string_view string) noexcept -> std::optional<T_IntType>
+    {
+        T_IntType val;
+        return std::from_chars(string.begin(), string.end(), val).ec
+                    == std::errc {}
+                 ? std::optional { val }
+                 : std::nullopt;
+    }
+}

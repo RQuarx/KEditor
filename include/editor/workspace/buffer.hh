@@ -1,5 +1,4 @@
-#ifndef _KEDITOR_EDITOR_WORKSPACE_BUFFER_HH
-#define _KEDITOR_EDITOR_WORKSPACE_BUFFER_HH
+#pragma once
 #include "config.hh"
 #include "logger.hh"
 #include "model/piece_table.hh"
@@ -11,47 +10,43 @@
 /**
  * @brief A file buffer/editor class.
  */
-class Buffer
+class buffer : sdl::renderable<bool>
 {
 public:
-    Buffer(Config          *&config,
-           Logger          *&logger,
-           model::PieceTable pt);
+    buffer(kei::config &config, kei::logger &logger, model::piece_table pt);
 
 
     auto open_file(std::filesystem::path path) -> bool;
 
 
-    auto set_rect(sdl::FRect rect) -> bool;
+    auto set_rect(sdl::frect rect) -> bool;
 
     [[nodiscard]]
-    auto get_rect() const noexcept -> widget::Box *;
+    auto get_rect() const noexcept -> widget::box *;
 
 
-    auto add_event_callbacks(sdl::EventHandler &handler) -> bool;
-    auto render(sdl::Renderer &render) -> bool;
+    auto add_event_callbacks(sdl::event_handler &handler) -> bool override;
+    auto render(sdl::renderer &render) -> bool override;
 
 private:
-    Config *m_config;
-    Logger *m_logger;
+    kei::config &m_config;
+    kei::logger &m_logger;
 
-    model::PieceTable m_buffer { "" };
+    model::piece_table m_buffer { "" };
 
     std::filesystem::path m_file_path;
 
     bool m_focused;
     int  m_cursor_pos;
 
-    std::unique_ptr<widget::Box> m_box;
+    std::unique_ptr<widget::box> m_box;
 
-    std::vector<sdl::Texture> m_texture_cache;
-
-
-    Buffer();
+    std::vector<sdl::texture> m_texture_cache;
 
 
-    auto mf_on_mouse_button_down(const sdl::Event &event, sdl::Renderer &render)
-        -> sdl::EventReturnType;
+    buffer();
+
+
+    auto mf_on_mouse_button_down(const sdl::event &event, sdl::renderer &render)
+        -> sdl::event_return_type;
 };
-
-#endif /* _KEDITOR_EDITOR_WORKSPACE_BUFFER_HH */

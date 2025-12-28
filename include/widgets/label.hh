@@ -1,33 +1,40 @@
-#ifndef _KEDITOR_WIDGETS_LABEL_HH
-#define _KEDITOR_WIDGETS_LABEL_HH
+#pragma once
 #include "sdl/text.hh"
-#include "widgets/box.hh"
+#include "widgets/base.hh"
 
 
 namespace widget
 {
-    class Label : public Box
+    class label : public base
     {
     public:
-        Label(sdl::FPoint                position,
-              std::string                string,
-              sdl::Color                 background_color,
-              sdl::Color                 text_color,
-              std::shared_ptr<sdl::Font> font);
+        label(sdl::fpoint                       position,
+              const std::shared_ptr<sdl::font> &font,
+              std::string                       string);
+
+        auto render(sdl::renderer &render) -> label & override;
 
 
-        void render(sdl::Renderer &render) override;
+        auto set_font(const std::shared_ptr<sdl::font> &font) noexcept
+            -> label &;
+        auto set_text_color(sdl::color color) noexcept -> label &;
+        auto set_string(std::string string) noexcept -> label &;
+
+
+        [[nodiscard]] auto get_font() const noexcept
+            -> std::shared_ptr<sdl::font>;
+        [[nodiscard]] auto get_text_color() const noexcept -> sdl::color;
+        [[nodiscard]] auto get_string() const noexcept -> std::string;
+
+    protected:
+        sdl::color  mp_text_color;
+        std::string mp_string;
+        sdl::text   mp_text;
+
+        std::shared_ptr<sdl::font> mp_font;
 
     private:
-        sdl::Color m_text_color;
-
-        std::string m_string;
-        sdl::Text   m_text;
-
-        sdl::FSize m_string_size;
-
-        std::shared_ptr<sdl::Font> m_font;
+        using base::set_rect;
+        using base::set_size;
     };
 }
-
-#endif /* _KEDITOR_WIDGETS_LABEL_HH */

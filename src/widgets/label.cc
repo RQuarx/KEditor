@@ -2,36 +2,83 @@
 
 #include "widgets/label.hh"
 
-using widget::Label;
+using widget::label;
 
 
-Label::Label(sdl::FPoint                position,
-             std::string                string,
-             sdl::Color                 background_color,
-             sdl::Color                 text_color,
-             std::shared_ptr<sdl::Font> font)
-    : Box { { position.x, position.y, 0, 0 }, background_color },
-      m_text_color { text_color }, m_string { std::move(string) },
-      m_font { std::move(font) }
+label::label(sdl::fpoint                       position,
+              const std::shared_ptr<sdl::font> &font,
+              std::string                       string)
+    : base { { position.x, position.y, 0, 0 } },
+      mp_text_color { 0xffffff_rgb }, mp_string { std::move(string) },
+      mp_font { font }
 {
-    m_string_size = m_font->get_string_size(m_string);
-    set_size(m_string_size);
+    sdl::fsize string_size { mp_font->get_string_size(mp_string) };
+    set_size(string_size);
 }
 
 
-void
-Label::render(sdl::Renderer &render)
+auto
+label::render(sdl::renderer &render) -> label &
 {
-    if (!is_visible()) return;
+    if (!mp_visible) return *this;
 
-    if (m_text.raw() == nullptr)
+    if (mp_text.raw() == nullptr || mp_text.get_string() != mp_string)
     {
         auto engine { render.get_text_engine() };
-        m_text = sdl::Text { render, *m_font.get(), m_string };
+        mp_text = sdl::text { render, *mp_font.get(), mp_string };
 
-        m_text.set_color(m_text_color);
+        mp_text.set_color(mp_text_color);
     }
 
-    Box::render(render);
-    m_text.render({ get_area().x, get_area().y });
+    render.set_draw_color(mp_color);
+    render.render_rect(mp_rect);
+
+    mp_text.set_color(mp_text_color);
+    mp_text.render(get_position());
+    return *this;
+}
+
+
+auto
+label::set_font(const std::shared_ptr<sdl::font> &font) noexcept -> label &
+{
+    mp_font = font;
+    return *this;
+}
+
+
+auto
+label::set_text_color(sdl::color color) noexcept -> label &
+{
+    mp_text_color = color;
+    return *this;
+}
+
+
+auto
+label::set_string(std::string string) noexcept -> label &
+{
+    mp_string = std::move(string);
+    return *this;
+}
+
+
+auto
+label::get_font() const noexcept -> std::shared_ptr<sdl::font>
+{
+    return mp_font;
+}
+
+
+auto
+label::get_text_color() const noexcept -> sdl::color
+{
+    return mp_color;
+}
+
+
+auto
+label::get_string() const noexcept -> std::string
+{
+    return mp_string;
 }

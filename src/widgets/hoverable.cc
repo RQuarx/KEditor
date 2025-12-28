@@ -2,138 +2,149 @@
 
 #include "widgets/hoverable.hh"
 
-using widget::Hoverable;
+using widget::hoverable;
 
 
-namespace
+hoverable::hoverable(sdl::frect rect) noexcept
+    : base { rect }, mp_fadeout_time_ms { 500 }, mp_fadein_time_ms { 250 },
+      m_fade_state { fade_state::none }, m_current_color { mp_color }
 {
-    [[nodiscard]]
-    auto
-    get_bright_color(sdl::Color color, std::uint8_t brightness_factor)
-        -> sdl::Color
-    {
-        color.r = std::clamp(color.r + brightness_factor, 0, 255);
-        color.g = std::clamp(color.g + brightness_factor, 0, 255);
-        color.b = std::clamp(color.b + brightness_factor, 0, 255);
-
-        return color;
-    }
-
-
-    [[nodiscard]]
-    auto
-    is_in_bound(sdl::FRect area, sdl::FPoint position, int exclude_amount = 0)
-        -> bool
-    {
-        if (exclude_amount * 2.0F >= area.w || exclude_amount * 2.0F >= area.h)
-            return false;
-
-        sdl::FRect actual_area { area.x + exclude_amount,
-                                 area.y + exclude_amount,
-                                 area.w - (exclude_amount * 2.0F),
-                                 area.h - (exclude_amount * 2.0F) };
-
-        return sdl::is_point_in_rect(actual_area, position);
-    }
-}
-
-
-Hoverable::Hoverable(sdl::FRect                area,
-                     sdl::Color                color,
-                     std::optional<sdl::Color> border_color)
-    : Box(area, color, border_color),
-      m_hovered_color(get_bright_color(get_color(), BRIGHTNESS_FACTOR))
-{
-}
-
-
-void
-Hoverable::add_event_callbacks(sdl::EventHandler &handler)
-{
-    handler.connect(SDL_EVENT_MOUSE_MOTION, this,
-                    &Hoverable::mf_on_mouse_motion);
-}
-
-
-void
-Hoverable::render(sdl::Renderer &render)
-{
-    if (!is_visible()) return;
-
-    if (m_fading_out)
-    {
-        mf_render_fade(render);
-        return;
-    }
-
-    sdl::FRect area { get_area() };
-    sdl::Color color { m_hovered ? m_hovered_color : get_color() };
-
-    if (!get_border_color())
-    {
-        render.set_draw_color(color);
-        render.render_rect(area);
-    }
-
-    sdl::FRect inside_area { get_area(false) };
-
-    render.set_draw_color(*get_border_color());
-    render.render_rect(area, false);
-    render.set_draw_color(color);
-    render.render_rect(inside_area);
 }
 
 
 auto
-Hoverable::mf_on_mouse_motion(const sdl::Event &event,
-                              sdl::Renderer & /* render */)
-    -> sdl::EventReturnType
+hoverable::add_event_callbacks(sdl::event_handler &handler) noexcept
+    -> hoverable &
 {
-    bool new_hovered { is_in_bound(get_area(false),
-                                   { event.motion.x, event.motion.y }) };
+    m_OMM_connection = handler.connect(SDL_EVENT_MOUSE_MOTION, this,
+                                       &hoverable::mf_on_mouse_motion);
+    return *this;
+}
 
-    if (new_hovered != m_hovered)
+
+auto
+hoverable::render(sdl::renderer &render) -> hoverable &
+{
+    if (!mp_visible) return *this;
+
+    if (m_fade_state != fade_state::none)
     {
-        m_hovered         = new_hovered;
-        m_fade_elapsed    = 0.0F;
-        m_fading_out      = !m_hovered;
-        m_prev_frame_time = SDL_GetTicks();
+        mf_render_fade(render);
+        return *this;
     }
 
-    return sdl::EventReturnType::CONTINUE;
+    render.set_draw_color(mp_hovered ? mp_hover_color : mp_color);
+    render.render_rect(mp_rect);
+    return *this;
 }
 
 
 void
-Hoverable::mf_render_fade(sdl::Renderer &render)
+hoverable::mf_render_fade(sdl::renderer &render)
 {
-    if (!m_fading_out) return;
+    if (m_fade_state == fade_state::none) return;
 
     std::uint64_t now { SDL_GetTicks() };
-    auto          delta_time { static_cast<float>(now - m_prev_frame_time) };
+    auto delta_time { static_cast<float>(now - m_previous_frame_time) };
 
     m_fade_elapsed += delta_time;
-    float t { std::min(m_fade_elapsed / FADEOUT_TIME_MS, 1.0F) };
 
-    sdl::Color render_color { sdl::Color::lerp(m_hovered_color, get_color(),
-                                               t) };
+    std::uint64_t duration { m_fade_state == fade_state::to_hover
+                                 ? mp_fadein_time_ms
+                                 : mp_fadeout_time_ms };
 
-    sdl::FRect area { get_area() };
-    if (!get_border_color())
+    auto t { std::min(m_fade_elapsed / duration, 1.0F) };
+
+    m_current_color
+        = sdl::color::lerp(m_fade_start_color, m_fade_target_color, t);
+
+    render.set_draw_color(m_current_color);
+    render.render_rect(mp_rect);
+
+    m_previous_frame_time = now;
+    if (t >= 1.0F) m_fade_state = fade_state::none;
+}
+
+
+auto
+hoverable::mf_on_mouse_motion(const sdl::event &event,
+                              sdl::renderer & /* render */)
+    -> sdl::event_return_type
+{
+    bool new_hovered { sdl::is_point_in_rect(
+        mp_rect, { event.motion.x, event.motion.y }) };
+
+    if (new_hovered == mp_hovered) return sdl::event_return_type::CONTINUE;
+
+    mp_hovered = new_hovered;
+
+    m_fade_elapsed        = 0.0F;
+    m_previous_frame_time = SDL_GetTicks();
+
+    m_fade_start_color = m_current_color;
+
+    if (mp_hovered)
     {
-        render.set_draw_color(render_color);
-        render.render_rect(area);
+        m_fade_state        = fade_state::to_hover;
+        m_fade_target_color = mp_hover_color;
     }
     else
     {
-        sdl::FRect inside_area { get_area(false) };
-        render.set_draw_color(*get_border_color());
-        render.render_rect(area, false);
-        render.set_draw_color(render_color);
-        render.render_rect(inside_area);
+        m_fade_state        = fade_state::to_normal;
+        m_fade_target_color = mp_color;
     }
 
-    m_prev_frame_time = SDL_GetTicks();
+    return sdl::event_return_type::CONTINUE;
+}
 
-    if (t >= 1.0F) m_fading_out = false;
+
+auto
+hoverable::set_hover_color(sdl::color color) noexcept -> hoverable &
+{
+    mp_hover_color = color;
+    return *this;
+}
+
+
+auto
+hoverable::set_fadeout_time(std::uint64_t ms) noexcept -> hoverable &
+{
+    mp_fadeout_time_ms = ms;
+    return *this;
+}
+
+
+auto
+hoverable::set_fadein_time(std::uint64_t ms) noexcept -> hoverable &
+{
+    mp_fadein_time_ms = ms;
+    return *this;
+}
+
+
+auto
+hoverable::get_hover_color() const noexcept -> sdl::color
+{
+    return mp_hover_color;
+}
+
+
+auto
+hoverable::get_fadeout_time() const noexcept -> std::uint64_t
+{
+    return mp_fadeout_time_ms;
+}
+
+
+auto
+hoverable::get_fadein_time() const noexcept -> std::uint64_t
+{
+    return mp_fadein_time_ms;
+}
+
+
+auto
+hoverable::get_hovered() const noexcept -> bool
+{
+    return mp_hovered;
 }

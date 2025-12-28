@@ -1,5 +1,4 @@
-#ifndef _KEDITOR_SDL_COLOR_HH
-#define _KEDITOR_SDL_COLOR_HH
+#pragma once
 #include <cmath>
 #include <cstdint>
 
@@ -13,16 +12,16 @@
 
 namespace sdl
 {
-    struct alignas(alignof(std::uint32_t)) Color
+    struct alignas(alignof(std::uint32_t)) color
     {
         std::uint8_t r;
         std::uint8_t g;
         std::uint8_t b;
         std::uint8_t a { 255 };
 
-        constexpr Color() = default;
+        constexpr color() = default;
 
-        constexpr Color(std::uint8_t r,
+        constexpr color(std::uint8_t r,
                         std::uint8_t g,
                         std::uint8_t b,
                         std::uint8_t a = 255)
@@ -30,28 +29,28 @@ namespace sdl
         {
         }
 
-        Color(std::string_view string)
+        color(std::string_view string)
         {
             if (!string.starts_with('#'))
-                throw kei::InvalidArgument { "Provided string is not a hex" };
+                throw kei::invalid_argument { "Provided string is not a hex" };
 
             *this = from_hex(string.data(), string.length());
         }
 
 
         static constexpr auto
-        from_rgb(std::uint32_t value) -> Color
+        from_rgb(std::uint32_t value) -> color
         {
-            return Color { static_cast<std::uint8_t>((value >> 16) & 0xFF),
+            return color { static_cast<std::uint8_t>((value >> 16) & 0xFF),
                            static_cast<std::uint8_t>((value >> 8) & 0xFF),
                            static_cast<std::uint8_t>((value) & 0xFF), 255 };
         }
 
 
         static constexpr auto
-        from_rgba(std::uint32_t value) -> Color
+        from_rgba(std::uint32_t value) -> color
         {
-            return Color {
+            return color {
                 static_cast<std::uint8_t>((value >> 24) & 0xFF),
                 static_cast<std::uint8_t>((value >> 16) & 0xFF),
                 static_cast<std::uint8_t>((value >> 8) & 0xFF),
@@ -60,13 +59,13 @@ namespace sdl
         }
 
         static constexpr auto
-        from_rgb_hex(const char *hex) -> Color
+        from_rgb_hex(const char *hex) -> color
         {
             return from_hex(hex, 6);
         }
 
         static constexpr auto
-        from_rgba_hex(const char *hex) -> Color
+        from_rgba_hex(const char *hex) -> color
         {
             return from_hex(hex, 8);
         }
@@ -106,7 +105,7 @@ namespace sdl
 
         [[nodiscard]]
         static constexpr auto
-        lerp(Color a, Color b, float t) -> Color
+        lerp(color a, color b, float t) -> color
         {
             auto lerp8 {
                 [](std::uint8_t a, std::uint8_t b, float t) -> std::uint8_t
@@ -136,30 +135,32 @@ namespace sdl
 
 
         static constexpr auto
-        from_hex(const char *s, int len) -> Color
+        from_hex(const char *s, int len) -> color
         {
             int actual { 0 };
             while (s[actual] != '\0') actual++;
 
             if (actual != len)
-                throw kei::InvalidArgument {
-                    "Color hex literal has wrong length"
+                throw kei::invalid_argument {
+                    "Hexadecimal literal has wrong length"
                 };
 
-            auto read_byte = [&](int pos) -> std::uint8_t
-            {
-                int hi { hex_val(s[pos]) };
-                int lo { hex_val(s[pos + 1]) };
+            auto read_byte {
+                [&s](int pos) -> std::uint8_t
+                {
+                    int hi { hex_val(s[pos]) };
+                    int lo { hex_val(s[pos + 1]) };
 
-                if (hi < 0 || lo < 0)
-                    throw kei::InvalidArgument { "Invalid hex digit" };
+                    if (hi < 0 || lo < 0)
+                        throw kei::invalid_argument { "Invalid hex digit" };
 
-                return static_cast<std::uint8_t>((hi * 16) + lo);
+                    return static_cast<std::uint8_t>((hi * 16) + lo);
+                }
             };
 
             if (len == 6)
-                return Color { read_byte(0), read_byte(2), read_byte(4), 255 };
-            return Color { read_byte(0), read_byte(2), read_byte(4),
+                return color { read_byte(0), read_byte(2), read_byte(4), 255 };
+            return color { read_byte(0), read_byte(2), read_byte(4),
                            read_byte(6) };
         }
     };
@@ -167,40 +168,38 @@ namespace sdl
 
 
 static constexpr auto
-operator""_rgb(const unsigned long long color) -> sdl::Color
+operator""_rgb(const unsigned long long color) -> sdl::color
 {
-    return sdl::Color::from_rgb(color);
+    return sdl::color::from_rgb(color);
 }
 
 
 static constexpr auto
-operator""_rgba(const unsigned long long color) -> sdl::Color
+operator""_rgba(const unsigned long long color) -> sdl::color
 {
-    return sdl::Color::from_rgba(color);
+    return sdl::color::from_rgba(color);
 }
 
 
 static constexpr auto
-operator""_rgb(const char *hex, std::size_t len) -> sdl::Color
+operator""_rgb(const char *hex, std::size_t len) -> sdl::color
 {
     if (len != 6)
-        throw kei::InvalidArgument {
+        throw kei::invalid_argument {
             "Hex literals must be 6 characters for _rgb"
         };
 
-    return sdl::Color::from_rgb_hex(hex);
+    return sdl::color::from_rgb_hex(hex);
 }
 
 
 static constexpr auto
-operator""_rgba(const char *hex, std::size_t len) -> sdl::Color
+operator""_rgba(const char *hex, std::size_t len) -> sdl::color
 {
     if (len != 8)
-        throw kei::InvalidArgument {
+        throw kei::invalid_argument {
             "Hex literals must be 8 characters for _rgba"
         };
 
-    return sdl::Color::from_rgba_hex(hex);
+    return sdl::color::from_rgba_hex(hex);
 }
-
-#endif /* _KEDITOR_SDL_COLOR_HH */
