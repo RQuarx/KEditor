@@ -4,7 +4,7 @@
 
 namespace widget
 {
-    class hoverable : public base
+    class hoverable : public virtual base
     {
         enum class fade_state : std::uint8_t
         {

@@ -41,7 +41,10 @@ namespace sdl
         };
 
     public:
-        using slot_type = std::function<T_Ret(T_Params...)>;
+        using slot_type   = std::function<T_Ret(T_Params...)>;
+        using emit_result = std::conditional_t<std::is_same_v<T_Ret, void>,
+                                               void,
+                                               std::vector<T_Ret>>;
 
 
         signal() = default;
@@ -137,25 +140,39 @@ namespace sdl
 
 
         auto
-        emit(T_Params &&...params) -> std::vector<T_Ret>
+        emit(T_Params &&...params) -> emit_result
         {
             std::scoped_lock lock(m_mutex);
 
-            if (!m_enabled) return {};
-
-            std::vector<T_Ret> results;
-            results.reserve(m_slots.size());
-
-            for (auto &slot : m_slots)
+            if (!m_enabled)
             {
-                results.emplace_back(slot(params...));
+                if constexpr (!std::is_same_v<T_Ret, void>)
+                    return {};
+                else
+                    return;
             }
-            return results;
+
+            if constexpr (std::is_same_v<T_Ret, void>)
+            {
+                for (auto &slot : m_slots)
+                    slot.slot(std::forward<T_Params>(params)...);
+            }
+            else
+            {
+                std::vector<T_Ret> results;
+                results.reserve(m_slots.size());
+
+                for (auto &slot : m_slots)
+                    results.emplace_back(
+                        slot.slot(std::forward<T_Params>(params)...));
+
+                return results;
+            }
         }
 
 
         auto
-        operator()(T_Params &&...params) -> std::vector<T_Ret>
+        operator()(T_Params &&...params) -> emit_result
         {
             return emit(std::forward<T_Params>(params)...);
         }
@@ -164,6 +181,7 @@ namespace sdl
         template <typename T_Pred>
         auto
         emit_until(T_Pred pred, T_Params... params) -> std::optional<T_Ret>
+            requires(!std::is_same_v<T_Ret, void>)
         {
             std::scoped_lock lock(m_mutex);
 
@@ -171,7 +189,7 @@ namespace sdl
 
             for (auto &slot : m_slots)
             {
-                T_Ret r { slot(params...) };
+                T_Ret r { slot.slot(params...) };
                 if (pred(r)) return r;
             }
 
@@ -211,7 +229,7 @@ namespace sdl
 
     private:
         mutable std::mutex       m_mutex;
-        std::list<slot_wrapper>   m_slots;
+        std::list<slot_wrapper>  m_slots;
         bool                     m_enabled { true };
         std::atomic<std::size_t> m_next_id { 0 };
     };

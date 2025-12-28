@@ -5,7 +5,7 @@
 
 namespace widget
 {
-    class label : public base
+    class label : public virtual base
     {
     public:
         label(sdl::fpoint                       position,

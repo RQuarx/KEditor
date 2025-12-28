@@ -5,7 +5,7 @@
 
 namespace widget
 {
-    class box : public base
+    class box : public virtual base
     {
     public:
         box(sdl::frect rect) noexcept;
