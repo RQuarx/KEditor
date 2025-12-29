@@ -7,6 +7,7 @@
 #include "sdl/renderer.hh"
 #include "sdl/window.hh"
 #include "widgets/clickable.hh"
+#include "widgets/icon.hh"
 
 using kei::log_level;
 
@@ -40,16 +41,6 @@ try
 
     kei::logger logger { config.get_logger() };
 
-    widget::clickable click {
-        { 10, 10, 200, 200 }
-    };
-
-    click.set_clicked_color(0xffffff_rgb)
-        .set_hover_color(0x777777_rgb)
-        .set_color(0x222222_rgb);
-
-    click.add_event_callbacks(event_handler);
-
     while (true)
     {
         auto res { event_handler.poll(render) };
@@ -58,8 +49,6 @@ try
 
         render.set_draw_color(0x000000_rgb);
         render.clear();
-
-        click.render(render);
 
         render.present();
     }

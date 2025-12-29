@@ -68,6 +68,12 @@ namespace sdl
             return m_object == nullptr;
         }
 
+
+        operator T_SDLObject *()
+        {
+            return m_object;
+        }
+
     protected:
         T_SDLObject *m_object;
     };

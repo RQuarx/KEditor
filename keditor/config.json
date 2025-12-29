@@ -2,5 +2,6 @@
     "window":
     {
         "title": "Hello, World!"
-    }
+    },
+    "sidebar.icon-theme": "vscode-icons"
 }

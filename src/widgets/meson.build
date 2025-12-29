@@ -4,5 +4,6 @@ widgets_source_files = files(
     'clickable.cc',
     'frame.cc',
     'hoverable.cc',
+    'icon.cc',
     'label.cc',
 )

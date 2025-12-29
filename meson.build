@@ -8,10 +8,11 @@ project(
 )
 
 deps = [
-    dependency('jsoncpp',  fallback: ['jsoncpp', 'jsoncpp_dep']),
-    dependency('sdl3',     fallback: ['SDL',     'sdl3_dep']),
-    dependency('sdl3-ttf', fallback: ['SDL_ttf', 'sdl3_ttf_dep']),
-    dependency('lyra',     fallback: ['Lyra',    'lyra_dep']),
+    dependency('jsoncpp',    fallback: ['jsoncpp',   'jsoncpp_dep'   ]),
+    dependency('sdl3',       fallback: ['SDL',       'sdl3_dep'      ]),
+    dependency('sdl3-ttf',   fallback: ['SDL_ttf',   'sdl3_ttf_dep'  ]),
+    dependency('sdl3-image', fallback: ['SDL_image', 'sdl3_image_dep']),
+    dependency('lyra',       fallback: ['Lyra',      'lyra_dep'      ]),
 ]
 
 args = [

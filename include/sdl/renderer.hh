@@ -13,6 +13,9 @@
 
 namespace sdl
 {
+    using surface = resource<SDL_Surface, SDL_DestroySurface>;
+    using texture = resource<SDL_Texture, SDL_DestroyTexture>;
+
     enum class render_return_type : std::uint8_t
     {
         SUCCESS,
@@ -68,6 +71,9 @@ namespace sdl
 
 
         void render_rect(sdl::frect &area, bool fill = true);
+
+
+        void render_texture(texture &texture, sdl::frect &dst);
 
 
         [[nodiscard]]

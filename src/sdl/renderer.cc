@@ -96,6 +96,14 @@ renderer::render_rect(sdl::frect &area, bool fill)
 }
 
 
+void
+renderer::render_texture(texture &texture, sdl::frect &dst)
+{
+    if (!SDL_RenderTexture(m_object, texture, nullptr, &dst))
+        throw sdl::exception { "renderer::render_texture(): {}", get_error() };
+}
+
+
 auto
 renderer::get_text_engine() const -> std::shared_ptr<text_engine>
 {
