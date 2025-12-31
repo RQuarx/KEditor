@@ -1,13 +1,12 @@
 #include <lyra/args.hpp>
 
 #include "config.hh"
+#include "editor/content.hh"
 #include "logger.hh"
 #include "sdl/event.hh"
 #include "sdl/instance.hh"
 #include "sdl/renderer.hh"
 #include "sdl/window.hh"
-#include "widgets/clickable.hh"
-#include "widgets/icon.hh"
 
 using kei::log_level;
 
@@ -31,15 +30,24 @@ auto
 main(int argc, char **argv) -> int
 try
 {
-    sdl::instance      SDL { SDL_INIT_VIDEO };
-    sdl::renderer      render { create_window_and_renderer() };
-    sdl::event_handler event_handler;
-
     kei::config config {
         lyra::args { argc, argv }
     };
 
     kei::logger logger { config.get_logger() };
+
+    logger[log_level::info, "main"]("Initializing SDL3");
+    sdl::instance SDL { SDL_INIT_VIDEO };
+
+    logger[log_level::info, "main"]("Creating window and renderer");
+    sdl::renderer      render { create_window_and_renderer() };
+    sdl::event_handler event_handler;
+
+    editor::content c { logger, "test_file" };
+
+    c.add(0, "Hello, World!");
+    c.remove(5, 8);
+    c.save();
 
     while (true)
     {
@@ -49,6 +57,7 @@ try
 
         render.set_draw_color(0x000000_rgb);
         render.clear();
+
 
         render.present();
     }

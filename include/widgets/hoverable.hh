@@ -4,7 +4,7 @@
 
 namespace widget
 {
-    class hoverable : public virtual base
+    class hoverable : public base
     {
         enum class fade_state : std::uint8_t
         {
@@ -20,6 +20,13 @@ namespace widget
         auto add_event_callbacks(sdl::event_handler &handler) noexcept
             -> hoverable & override;
         auto render(sdl::renderer &render) -> hoverable & override;
+
+
+        [[nodiscard]]
+        auto signal_on_hover_entry() noexcept -> sdl::signal<void> &;
+
+        [[nodiscard]]
+        auto signal_on_hover_exit() noexcept -> sdl::signal<void> &;
 
 
         auto set_fadeout_time(std::uint64_t ms) noexcept -> hoverable &;
@@ -49,6 +56,9 @@ namespace widget
         float         m_fade_elapsed;
 
         sdl::connection m_OMM_connection;
+
+        sdl::signal<void> m_on_hover_entry_signal;
+        sdl::signal<void> m_on_hover_exit_signal;
 
 
         auto mf_on_mouse_motion(const sdl::event &event, sdl::renderer &render)

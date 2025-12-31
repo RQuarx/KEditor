@@ -20,8 +20,7 @@ namespace
 
 
 frame::frame(sdl::frect rect) noexcept
-    : base { rect }, box { rect }, mp_border_color { 0xffffff_rgb },
-      mp_border_width { 1 }
+    : box { rect }, mp_border_color { 0xffffff_rgb }, mp_border_width { 1 }
 {
 }
 

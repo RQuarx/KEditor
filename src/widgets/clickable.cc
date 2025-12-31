@@ -3,10 +3,7 @@
 using widget::clickable;
 
 
-clickable::clickable(sdl::frect rect) noexcept
-    : base { rect }, hoverable { rect }
-{
-}
+clickable::clickable(sdl::frect rect) noexcept : hoverable { rect } {}
 
 
 auto

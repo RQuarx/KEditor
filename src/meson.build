@@ -1,4 +1,5 @@
-subdir('model')
+subdir('editor')
+subdir('platform')
 subdir('sdl')
 subdir('widgets')
 
@@ -7,4 +8,4 @@ source_files = files(
     'logger.cc',
     'main.cc',
     'utils.cc',
-) + model_source_files + sdl_source_files + widgets_source_files
+) + editor_source_files + platform_source_files + sdl_source_files + widgets_source_files

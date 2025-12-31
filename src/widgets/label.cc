@@ -30,9 +30,6 @@ label::render(sdl::renderer &render) -> label &
         mp_text.set_color(mp_text_color);
     }
 
-    render.set_draw_color(mp_color);
-    render.render_rect(mp_rect);
-
     mp_text.set_color(mp_text_color);
     mp_text.render(get_position());
     return *this;

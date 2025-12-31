@@ -5,7 +5,7 @@
 
 namespace widget
 {
-    class label : public virtual base
+    class label final : public base
     {
     public:
         label(sdl::fpoint                       position,
@@ -21,8 +21,8 @@ namespace widget
         auto set_string(std::string string) noexcept -> label &;
 
 
-        [[nodiscard]] auto get_font() const noexcept
-            -> std::shared_ptr<sdl::font>;
+        [[nodiscard]]
+        auto get_font() const noexcept -> std::shared_ptr<sdl::font>;
         [[nodiscard]] auto get_text_color() const noexcept -> sdl::color;
         [[nodiscard]] auto get_string() const noexcept -> std::string;
 

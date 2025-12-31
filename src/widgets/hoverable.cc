@@ -85,16 +85,32 @@ hoverable::mf_on_mouse_motion(const sdl::event &event,
 
     if (mp_hovered)
     {
+        m_on_hover_entry_signal.emit();
         m_fade_state        = fade_state::to_hover;
         m_fade_target_color = mp_hover_color;
     }
     else
     {
+        m_on_hover_exit_signal.emit();
         m_fade_state        = fade_state::to_normal;
         m_fade_target_color = mp_color;
     }
 
     return sdl::event_return_type::CONTINUE;
+}
+
+
+auto
+hoverable::signal_on_hover_entry() noexcept -> sdl::signal<void> &
+{
+    return m_on_hover_entry_signal;
+}
+
+
+auto
+hoverable::signal_on_hover_exit() noexcept -> sdl::signal<void> &
+{
+    return m_on_hover_exit_signal;
 }
 
 
