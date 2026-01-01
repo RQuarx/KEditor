@@ -3,12 +3,6 @@
 
 namespace sdl
 {
-    /**
-     * @brief A lifetime manager for SDL objects.
-     *
-     * @tparam T_SDLObject  The SDL object to manage.
-     * @tparam T_Destructor The `SDL_Destroy*` function for the object.
-     */
     template <typename T_SDLObject, void (*T_Destructor)(T_SDLObject *)>
     class resource
     {
@@ -47,7 +41,7 @@ namespace sdl
 
         [[nodiscard]]
         auto
-        raw() -> T_SDLObject *
+        get() -> T_SDLObject *
         {
             return m_object;
         }
@@ -55,21 +49,21 @@ namespace sdl
 
         [[nodiscard]]
         auto
-        raw() const -> T_SDLObject *
+        get() const -> T_SDLObject *
         {
             return m_object;
         }
 
 
-        [[nodiscard]]
-        auto
-        operator!() const -> bool
+        explicit
+        operator bool() const noexcept
         {
-            return m_object == nullptr;
+            return m_object != nullptr;
         }
 
 
-        operator T_SDLObject *()
+        explicit
+        operator T_SDLObject *() const noexcept
         {
             return m_object;
         }
