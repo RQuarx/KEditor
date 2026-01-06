@@ -7,32 +7,27 @@ using sdl::text_engine;
 
 text_engine::text_engine(renderer &render)
 {
-    m_object = TTF_CreateRendererTextEngine(render.raw());
+    m_object = TTF_CreateRendererTextEngine(render);
     if (m_object == nullptr) throw sdl::exception {};
 }
 
 
 renderer::renderer(window &&window, const std::string &device)
 {
-    m_object = SDL_CreateRenderer(window.raw(),
-                                  device.empty() ? nullptr : device.c_str());
+    m_object
+        = SDL_CreateRenderer(window, device.empty() ? nullptr : device.c_str());
 
-    if (m_object == nullptr) throw sdl::exception {};
+    if (m_object == nullptr)
+        throw sdl::exception { "renderer::renderer(): {}", get_error() };
 
     if (!SDL_SetRenderDrawBlendMode(m_object, SDL_BLENDMODE_BLEND))
-        throw sdl::exception {};
+        throw sdl::exception { "renderer::renderer(): {}", get_error() };
 
-    if (!SDL_SetRenderVSync(m_object, 1)) throw sdl::exception {};
+    if (!SDL_SetRenderVSync(m_object, 1))
+        throw sdl::exception { "renderer::renderer(): {}", get_error() };
 
     m_engine = std::make_shared<text_engine>(*this);
     m_window = std::move(window);
-}
-
-
-auto
-renderer::get_render_nexts() -> signal<render_return_type, sdl::renderer &> &
-{
-    return m_render_nexts;
 }
 
 
@@ -43,26 +38,28 @@ renderer::get_window() -> sdl::window &
 }
 
 
-auto
-renderer::run_render_queue() -> render_return_type
-{
-    for (auto &slot : m_render_nexts.get_slots())
-    {
-        auto res { slot.slot(*this) };
-
-        if (res == render_return_type::FAILURE) return render_return_type::FAILURE;
-    }
-
-    return render_return_type::SUCCESS;
-}
-
-
 void
 renderer::set_draw_color(color color)
 {
     if (!SDL_SetRenderDrawColorFloat(m_object,
                                      COLOR_TO_PARAM(color.to_fcolor())))
         throw sdl::exception { "renderer::set_draw_color(): {}", get_error() };
+}
+
+
+void
+renderer::set_clip_rect(const frect &rect)
+{
+    SDL_Rect r { static_cast<int>(rect.x), static_cast<int>(rect.y),
+                 static_cast<int>(rect.w), static_cast<int>(rect.h) };
+    if (!SDL_SetRenderClipRect(m_object, &r)) throw sdl::exception {};
+}
+
+
+void
+renderer::clear_clip_rect()
+{
+    if (!SDL_SetRenderClipRect(m_object, nullptr)) throw sdl::exception {};
 }
 
 

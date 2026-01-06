@@ -1,12 +1,12 @@
 #include <lyra/args.hpp>
 
 #include "config.hh"
-#include "editor/content.hh"
-#include "logger.hh"
+#include "sdl/context.hh"
 #include "sdl/event.hh"
-#include "sdl/instance.hh"
 #include "sdl/renderer.hh"
-#include "sdl/window.hh"
+#include "widgets/button.hh"
+#include "widgets/label.hh"
+#include "widgets/widget.hh"
 
 using kei::log_level;
 
@@ -15,7 +15,7 @@ namespace
 {
     [[nodiscard]]
     auto
-    create_window_and_renderer() -> sdl::renderer
+    create_renderer() -> sdl::renderer
     {
         sdl::window   window { APP_NAME, SDL_WINDOW_HIGH_PIXEL_DENSITY
                                            | SDL_WINDOW_RESIZABLE };
@@ -36,30 +36,37 @@ try
 
     kei::logger logger { config.get_logger() };
 
-    logger[log_level::info, "main"]("Initializing SDL3");
-    sdl::instance SDL { SDL_INIT_VIDEO };
+    sdl::event_handler handler;
+    sdl::context       ctx { handler };
 
-    logger[log_level::info, "main"]("Creating window and renderer");
-    sdl::renderer      render { create_window_and_renderer() };
-    sdl::event_handler event_handler;
-
-    editor::content c { logger, "test_file" };
-
-    c.add(0, "Hello, World!");
-    c.remove(5, 8);
-    c.save();
+    ctx.render.renderer = create_renderer();
 
     while (true)
     {
-        auto res { event_handler.poll(render) };
-        if (res == sdl::event_return_type::SUCCESS) break;
-        if (res == sdl::event_return_type::FAILURE) return 1;
+        handler.poll(ctx.render.renderer);
+        if (handler.should_exit()) break;
 
-        render.set_draw_color(0x000000_rgb);
-        render.clear();
+        ctx.begin_frame();
 
+        auto *size_buf { widget::get_label_font(ctx, 0) };
 
-        render.present();
+        sdl::fsize size;
+        if (size_buf == nullptr)
+            size = { .w = 100, .h = 50 };
+        else
+            size = size_buf->get_string_size("Hello, World!");
+
+        auto res { widget::button(ctx, widget::make_id("0"),
+                                  { 10, 10, size.w, size.h }) };
+
+        logger[log_level::debug, "main"](
+            "{}", res == widget::button_result::hover     ? "hover"
+                  : res == widget::button_result::clicked ? "clicked"
+                                                          : "none");
+
+        widget::label(ctx, 0, "Hello, World!", { 10, 10 });
+
+        ctx.end_frame();
     }
 
     return 0;
@@ -67,6 +74,6 @@ try
 catch (const kei::exception &e)
 {
     kei::logger logger { log_level::warn };
-    logger[log_level::error, "main"]("{}", e.what());
+    logger[log_level::fatal, "main"]("{}", e.what());
     return 1;
 }

@@ -13,7 +13,7 @@ namespace sdl
 
         ~resource()
         {
-            if (m_object) T_Destructor(m_object);
+            if (m_object != nullptr) T_Destructor(m_object);
         }
 
         resource(const resource &)                     = delete;
@@ -62,11 +62,7 @@ namespace sdl
         }
 
 
-        explicit
-        operator T_SDLObject *() const noexcept
-        {
-            return m_object;
-        }
+        operator T_SDLObject *() const noexcept { return m_object; }
 
     protected:
         T_SDLObject *m_object;

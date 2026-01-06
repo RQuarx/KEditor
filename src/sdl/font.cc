@@ -27,3 +27,17 @@ font::get_string_size(std::string_view string) -> sdl::fsize
 
     return { .w = static_cast<float>(w), .h = static_cast<float>(h) };
 }
+
+
+auto
+font::get_family_name() const -> std::string
+{
+    return TTF_GetFontFamilyName(m_object);
+}
+
+
+auto
+font::get_ptsize() const -> float
+{
+    return TTF_GetFontSize(m_object);
+}

@@ -97,7 +97,7 @@ namespace sdl
         connect(T_Func &&f, T_FuncParams &&...extra) -> connection
         {
             auto bound_slot { [f = std::forward<T_Func>(f),
-                               extra...](T_Params... params) -> T_Ret
+                               extra...](T_Params... params) mutable -> T_Ret
                               { return f(params..., extra...); } };
 
             return connect(slot_type { bound_slot });
@@ -114,7 +114,7 @@ namespace sdl
         {
             auto bound_slot {
                 [instance, mem_func = std::forward<T_Method>(mem_func),
-                 extra...](T_Params... params) -> T_Ret
+                 extra...](T_Params... params) mutable -> T_Ret
                 { return (instance->*mem_func)(params..., extra...); }
             };
             return connect(slot_type { bound_slot });
@@ -131,7 +131,7 @@ namespace sdl
         {
             auto bound_slot {
                 [instance, mem_func = std::forward<T_Method>(mem_func),
-                 extra...](T_Params... params) -> T_Ret
+                 extra...](T_Params... params) mutable -> T_Ret
                 { return (instance->*mem_func)(params..., extra...); }
             };
 

@@ -1,81 +1,102 @@
-#include <utility>
-
+#include "sdl/text.hh"
+#include "utils.hh"
 #include "widgets/label.hh"
 
-using widget::label;
 
-
-label::label(sdl::fpoint                       position,
-              const std::shared_ptr<sdl::font> &font,
-              std::string                       string)
-    : base { { position.x, position.y, 0, 0 } },
-      mp_text_color { 0xffffff_rgb }, mp_string { std::move(string) },
-      mp_font { font }
+namespace widget
 {
-    sdl::fsize string_size { mp_font->get_string_size(mp_string) };
-    set_size(string_size);
-}
-
-
-auto
-label::render(sdl::renderer &render) -> label &
-{
-    if (!mp_visible) return *this;
-
-    if (mp_text.raw() == nullptr || mp_text.get_string() != mp_string)
+    namespace
     {
-        auto engine { render.get_text_engine() };
-        mp_text = sdl::text { render, *mp_font.get(), mp_string };
+        [[nodiscard]]
+        auto
+        get_text(config::label_resource &resource,
+                 sdl::render_context    &render,
+                 id_t                    id,
+                 const std::string      &text) -> sdl::text &
+        {
+            if (!resource.font)
+                resource.font
+                    = { kei::get_asset("fonts/FiraMono-Regular.ttf", {}),
+                        24.0F };
 
-        mp_text.set_color(mp_text_color);
+            std::string key { std::format("{}|{}|{}",
+                                          resource.font.get_family_name(),
+                                          resource.font.get_ptsize(), id) };
+
+
+            auto it { resource.text_cache.find(key) };
+            if (it == resource.text_cache.end())
+            {
+                return resource.text_cache
+                    .emplace(key,
+                             sdl::text { render.renderer, resource.font, text })
+                    .first->second;
+            }
+
+            if (it->second.get_string() != text) it->second.set_string(text);
+
+            return it->second;
+        }
+
+
+        void
+        render_label(sdl::context         &ctx,
+                     id_t                  id,
+                     const std::string    &text,
+                     sdl::fpoint           position,
+                     sdl::fsize            size,
+                     config::label_config &config)
+        {
+            auto &resource { ctx.get_widget_data<config::label_resource>(id) };
+
+            sdl::text &text_obj { get_text(resource, ctx.render, id, text) };
+
+            if (size.w == 0 || size.h == 0)
+                size = resource.font.get_string_size(text);
+
+            sdl::render_context &render { ctx.render };
+
+            sdl::frect rect { ctx.resolve_rect(
+                { position.x, position.y, size.w, size.h }) };
+
+            if (config.background.a > 0)
+            {
+                render.renderer.set_draw_color(config.background);
+                render.renderer.render_rect(rect);
+            }
+
+            text_obj.set_color(config.foreground);
+            text_obj.render({ rect.x, rect.y });
+        }
     }
 
-    mp_text.set_color(mp_text_color);
-    mp_text.render(get_position());
-    return *this;
-}
+
+    auto
+    get_label_font(sdl::context &context, id_t id) -> sdl::font *
+    {
+        auto &resource { context.get_widget_data<config::label_resource>(id) };
+        return !resource.font ? nullptr : &resource.font;
+    }
 
 
-auto
-label::set_font(const std::shared_ptr<sdl::font> &font) noexcept -> label &
-{
-    mp_font = font;
-    return *this;
-}
+    void
+    label(sdl::context      &ctx,
+          id_t               id,
+          const std::string &text,
+          sdl::fpoint        position,
+          sdl::fsize         size)
+    {
+        render_label(ctx, id, text, position, size, config::label);
+    }
 
 
-auto
-label::set_text_color(sdl::color color) noexcept -> label &
-{
-    mp_text_color = color;
-    return *this;
-}
-
-
-auto
-label::set_string(std::string string) noexcept -> label &
-{
-    mp_string = std::move(string);
-    return *this;
-}
-
-
-auto
-label::get_font() const noexcept -> std::shared_ptr<sdl::font>
-{
-    return mp_font;
-}
-
-
-auto
-label::get_text_color() const noexcept -> sdl::color
-{
-    return mp_color;
-}
-
-
-auto
-label::get_string() const noexcept -> std::string
-{
-    return mp_string;
+    void
+    label_disabled(sdl::context      &ctx,
+                   id_t               id,
+                   const std::string &text,
+                   sdl::fpoint        position,
+                   sdl::fsize         size)
+    {
+        render_label(ctx, id, text, position, size, config::label_disabled);
+    }
 }

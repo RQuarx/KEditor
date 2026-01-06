@@ -4,7 +4,7 @@ project(
     default_options: ['cpp_std=c++23', 'warning_level=3'],
     version: '0.0.1',
     license: 'GPL-3.0-or-later',
-    license_files: ['COPYING'],
+    license_files: ['COPYING', 'fonts/OFL.txt'],
 )
 
 deps = [
@@ -26,7 +26,7 @@ executable(
     'keditor',
     source_files,
     include_directories: include_directories('include'),
-    install: true,
-    cpp_args: args,
+    install:      true,
+    cpp_args:     args,
     dependencies: deps,
 )

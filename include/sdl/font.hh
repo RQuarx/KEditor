@@ -21,6 +21,10 @@ namespace sdl
         auto get_string_size(std::string_view string) -> sdl::fsize;
 
 
+        [[nodiscard]] auto get_family_name() const -> std::string;
+        [[nodiscard]] auto get_ptsize() const -> float;
+
+
     private:
         std::filesystem::path m_font_path;
     };

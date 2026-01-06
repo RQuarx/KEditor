@@ -19,12 +19,12 @@ namespace sdl
         std::uint8_t b;
         std::uint8_t a { 255 };
 
-        constexpr color() = default;
+        constexpr color() noexcept = default;
 
         constexpr color(std::uint8_t r,
                         std::uint8_t g,
                         std::uint8_t b,
-                        std::uint8_t a = 255)
+                        std::uint8_t a = 255) noexcept
             : r(r), g(g), b(b), a(a)
         {
         }
@@ -39,7 +39,7 @@ namespace sdl
 
 
         static constexpr auto
-        from_rgb(std::uint32_t value) -> color
+        from_rgb(std::uint32_t value) noexcept -> color
         {
             return color { static_cast<std::uint8_t>((value >> 16) & 0xFF),
                            static_cast<std::uint8_t>((value >> 8) & 0xFF),
@@ -48,7 +48,7 @@ namespace sdl
 
 
         static constexpr auto
-        from_rgba(std::uint32_t value) -> color
+        from_rgba(std::uint32_t value) noexcept -> color
         {
             return color {
                 static_cast<std::uint8_t>((value >> 24) & 0xFF),
@@ -73,7 +73,7 @@ namespace sdl
 
         [[nodiscard]]
         constexpr auto
-        to_rgb_uint() const -> std::uint32_t
+        to_rgb_uint() const noexcept -> std::uint32_t
         {
             return (r << 16) | (g << 8) | b;
         }
@@ -81,7 +81,7 @@ namespace sdl
 
         [[nodiscard]]
         constexpr auto
-        to_rgba_uint() const -> std::uint32_t
+        to_rgba_uint() const noexcept -> std::uint32_t
         {
             return (r << 24) | (g << 16) | (b << 8) | a;
         }
@@ -89,7 +89,7 @@ namespace sdl
 
         [[nodiscard]]
         constexpr auto
-        to_color() const -> SDL_Color
+        to_color() const noexcept -> SDL_Color
         {
             return { r, g, b, a };
         }
@@ -97,15 +97,29 @@ namespace sdl
 
         [[nodiscard]]
         constexpr auto
-        to_fcolor() const -> SDL_FColor
+        to_fcolor() const noexcept -> SDL_FColor
         {
             return { r / 255.0F, g / 255.0F, b / 255.0F, a / 255.0F };
         }
 
 
+        constexpr
+        operator SDL_Color() const noexcept
+        {
+            return to_color();
+        }
+
+
+        constexpr
+        operator SDL_FColor() const noexcept
+        {
+            return to_fcolor();
+        }
+
+
         [[nodiscard]]
         static constexpr auto
-        lerp(color a, color b, float t) -> color
+        lerp(color a, color b, float t) noexcept -> color
         {
             auto lerp8 {
                 [](std::uint8_t a, std::uint8_t b, float t) -> std::uint8_t
@@ -125,7 +139,7 @@ namespace sdl
 
     private:
         static constexpr auto
-        hex_val(char c) -> int
+        hex_val(char c) noexcept -> int
         {
             return (c >= '0' && c <= '9') ? c - '0'
                  : (c >= 'A' && c <= 'F') ? c - 'A' + 10

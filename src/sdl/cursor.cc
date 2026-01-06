@@ -15,16 +15,16 @@ namespace
 
 namespace sdl
 {
-    using Cursor = sdl::resource<SDL_Cursor, SDL_DestroyCursor>;
+    using cursor = sdl::resource<SDL_Cursor, SDL_DestroyCursor>;
 
 
     void
-    set_cursor(SDL_SystemCursor cursor)
+    set_cursor(SDL_SystemCursor c)
     {
-        if (!CURSORS.contains(cursor))
-            CURSORS[cursor] = Cursor { SDL_CreateSystemCursor(cursor) };
+        if (!CURSORS.contains(c))
+            CURSORS[c] = cursor { SDL_CreateSystemCursor(c) };
 
-        if (!SDL_SetCursor(CURSORS[cursor].raw())) throw sdl::exception {};
+        if (!SDL_SetCursor(CURSORS[c])) throw sdl::exception {};
     }
 
 
@@ -33,9 +33,9 @@ namespace sdl
     {
         if (!CURSORS.contains(SDL_SYSTEM_CURSOR_DEFAULT))
             CURSORS[SDL_SYSTEM_CURSOR_DEFAULT]
-                = Cursor { SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_DEFAULT) };
+                = cursor { SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_DEFAULT) };
 
-        if (!SDL_SetCursor(CURSORS[SDL_SYSTEM_CURSOR_DEFAULT].raw()))
+        if (!SDL_SetCursor(CURSORS[SDL_SYSTEM_CURSOR_DEFAULT]))
             throw sdl::exception {};
     }
 }

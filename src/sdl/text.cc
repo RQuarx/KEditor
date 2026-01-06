@@ -6,7 +6,7 @@ using sdl::text;
 
 text::text(renderer &render, font &font, std::string string)
 {
-    m_object = TTF_CreateText(render.get_text_engine()->raw(), font.raw(),
+    m_object = TTF_CreateText(render.get_text_engine()->get(), font,
                               string.c_str(), string.length());
 
     if (m_object == nullptr) throw sdl::exception {};

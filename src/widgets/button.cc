@@ -1,227 +1,123 @@
 #include <print>
-
 #include "widgets/button.hh"
 
-using widget::button;
 
-
-button::button(sdl::frect                        rect,
-               const std::shared_ptr<sdl::font> &font,
-               std::string                       string)
-    : frame { rect }, m_clickable { rect }, m_discard_click_ms { 1500 }
+namespace widget
 {
-    if (font)
+    namespace
     {
-        m_label = label {
-            { rect.x, rect.y },
-            font, std::move(string)
-        };
+        std::unordered_map<id_t, button_state> g_button_animation;
 
-        set_size(m_label->get_size());
-        m_clickable.set_rect(mp_rect);
+
+        void
+        render_fade(sdl::render_context &render,
+                    button_state        &state,
+                    sdl::frect           rect)
+        {
+            std::uint64_t now { SDL_GetTicks() };
+
+            auto delta_time { static_cast<float>(now
+                                                 - state.previous_frame_time) };
+
+            state.fade_elapsed += delta_time;
+
+            std::uint64_t duration { state.fade_state == fade_state::to_hover
+                                         ? config::button.fadein_time_ms
+                                         : config::button.fadeout_time_ms };
+
+            duration = std::max<std::uint64_t>(duration, 1);
+
+            auto t { std::min(state.fade_elapsed / duration, 1.0F) };
+
+            state.current_color = sdl::color::lerp(state.fade_start_color,
+                                                   state.fade_target_color, t);
+
+            render.renderer.set_draw_color(state.current_color);
+            render.renderer.render_rect(rect);
+
+            state.previous_frame_time = now;
+            if (t >= 1.0F) state.fade_state = fade_state::none;
+        }
+
+
+        void
+        update_fade(button_state &state,
+                    sdl::color    base,
+                    sdl::color    hover,
+                    bool          is_hot)
+        {
+            if (is_hot && !state.was_hot)
+            {
+                state.fade_state          = fade_state::to_hover;
+                state.fade_elapsed        = 0.0F;
+                state.fade_start_color    = state.current_color;
+                state.fade_target_color   = hover;
+                state.previous_frame_time = SDL_GetTicks();
+            }
+            else if (!is_hot && state.was_hot)
+            {
+                state.fade_state          = fade_state::to_normal;
+                state.fade_elapsed        = 0.0F;
+                state.fade_start_color    = state.current_color;
+                state.fade_target_color   = base;
+                state.previous_frame_time = SDL_GetTicks();
+            }
+
+            state.was_hot = is_hot;
+        }
     }
 
-    m_OC_connection
-        = m_clickable.signal_clicked().connect(this, &button::mf_on_click);
-}
 
-
-auto
-button::add_event_callbacks(sdl::event_handler &handler) noexcept -> button &
-{
-    m_clickable.add_event_callbacks(handler);
-    return *this;
-}
-
-
-auto
-button::render(sdl::renderer &render) -> frame &
-{
-    if (!mp_visible) return *this;
-
-    frame::render(render);
-    m_clickable.render(render);
-
-    if (!m_label) return *this;
-
-    if (m_clickable.get_hovered()) m_label->set_text_color(m_hover_text_color);
-    if (m_clickable.get_clicked())
-        m_label->set_text_color(m_clicked_text_color);
-    m_label->render(render);
-
-    return *this;
-}
-
-
-void
-button::mf_on_click(clickable::click_type type)
-{
-    if (type == clickable::click_type::down)
+    auto
+    button(sdl::context &ctx, id_t id, sdl::frect rect) -> button_result
     {
-        m_down_button_clicked_ms = SDL_GetTicks();
-        return;
+        sdl::render_context &render { ctx.render };
+        sdl::input_context  &input { ctx.input };
+
+        rect = ctx.resolve_rect(rect);
+
+        bool hovered { sdl::is_point_in_rect(rect, input.cursor_position) };
+        if (hovered) ctx.set_hot(id);
+
+        auto [it, inserted] { g_button_animation.try_emplace(id) };
+        button_state &state { it->second };
+
+        if (inserted) state.current_color = config::button.base_color;
+
+        update_fade(state, config::button.base_color,
+                    config::button.hover_color, hovered);
+
+        bool clicked { false };
+
+        if (hovered && ctx.mouse_pressed(sdl::mouse_button::left))
+            ctx.set_active(id);
+
+        if (ctx.is_active(id) && ctx.mouse_released(sdl::mouse_button::left))
+        {
+            std::println("eee");
+            if (hovered) clicked = true;
+
+            ctx.clear_active();
+        }
+
+        if (ctx.is_active(id))
+        {
+            render.renderer.set_draw_color(config::button.clicked_color);
+            render.renderer.render_rect(rect);
+        }
+        else if (state.fade_state != fade_state::none)
+        {
+            render_fade(render, state, rect);
+        }
+        else
+        {
+            render.renderer.set_draw_color(state.current_color);
+            render.renderer.render_rect(rect);
+        }
+
+        if (clicked) return button_result::clicked;
+        if (ctx.is_hot(id)) return button_result::hover;
+
+        return button_result::none;
     }
-
-    std::uint64_t delta_time { SDL_GetTicks() - m_down_button_clicked_ms };
-
-    if (delta_time > m_discard_click_ms) return;
-
-    m_signal_clicked.emit();
-}
-
-
-auto
-button::signal_clicked() noexcept -> sdl::signal<void> &
-{
-    return m_signal_clicked;
-}
-
-
-auto
-button::set_font(const std::shared_ptr<sdl::font> &font) noexcept -> button &
-{
-    m_label->set_font(font);
-    return *this;
-}
-
-
-auto
-button::set_string(std::string string) noexcept -> button &
-{
-    m_label->set_string(std::move(string));
-    return *this;
-}
-
-
-auto
-button::set_text_color(sdl::color color) noexcept -> button &
-{
-    m_label->set_text_color(color);
-    return *this;
-}
-
-
-auto
-button::set_hover_text_color(sdl::color color) noexcept -> button &
-{
-    m_hover_text_color = color;
-    return *this;
-}
-
-
-auto
-button::set_clicked_text_color(sdl::color color) noexcept -> button &
-{
-    m_clicked_text_color = color;
-    return *this;
-}
-
-
-auto
-button::set_hover_color(sdl::color color) noexcept -> button &
-{
-    m_clickable.set_hover_color(color);
-    return *this;
-}
-
-
-auto
-button::set_clicked_color(sdl::color color) noexcept -> button &
-{
-    m_clickable.set_clicked_color(color);
-    return *this;
-}
-
-
-auto
-button::set_fadeout_time(std::uint64_t ms) noexcept -> button &
-{
-    m_clickable.set_fadeout_time(ms);
-    return *this;
-}
-
-
-auto
-button::set_fadein_time(std::uint64_t ms) noexcept -> button &
-{
-    m_clickable.set_fadein_time(ms);
-    return *this;
-}
-
-
-auto
-button::set_discard_click_time(std::uint64_t ms) noexcept -> button &
-{
-    m_discard_click_ms = ms;
-    return *this;
-}
-
-
-auto
-button::get_font() const noexcept -> std::shared_ptr<sdl::font>
-{
-    return m_label ? m_label->get_font() : nullptr;
-}
-
-
-auto
-button::get_string() const noexcept -> std::string
-{
-    return m_label ? m_label->get_string() : "";
-}
-
-
-auto
-button::get_text_color() const noexcept -> sdl::color
-{
-    return m_label ? m_label->get_text_color() : 0x000000_rgb;
-}
-
-
-auto
-button::get_hover_text_color() const noexcept -> sdl::color
-{
-    return m_hover_text_color;
-}
-
-
-auto
-button::get_clicked_text_color() const noexcept -> sdl::color
-{
-    return m_clicked_text_color;
-}
-
-
-auto
-button::get_hover_color() const noexcept -> sdl::color
-{
-    return m_clickable.get_hover_color();
-}
-
-
-auto
-button::get_clicked_color() const noexcept -> sdl::color
-{
-    return m_clickable.get_clicked_color();
-}
-
-
-auto
-button::get_fadeout_time() const noexcept -> std::uint64_t
-{
-    return m_clickable.get_fadeout_time();
-}
-
-
-auto
-button::get_fadein_time() const noexcept -> std::uint64_t
-{
-    return m_clickable.get_fadein_time();
-}
-
-
-auto
-button::get_discard_click_time() const noexcept -> std::uint64_t
-{
-    return m_discard_click_ms;
 }

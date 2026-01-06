@@ -39,4 +39,14 @@ namespace kei
                  ? std::optional { val }
                  : std::nullopt;
     }
+
+
+    [[nodiscard]]
+    auto get_asset(std::string_view name) noexcept
+        -> std::optional<std::string>;
+
+
+    [[nodiscard]]
+    auto get_asset(std::string_view name, const std::string &fallback) noexcept
+        -> std::string;
 }

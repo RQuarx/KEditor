@@ -1,7 +1,6 @@
 #pragma once
 #include <cstdint>
 #include <functional>
-#include <mutex>
 #include <utility>
 
 #include <SDL3/SDL_events.h>
@@ -12,22 +11,13 @@
 
 namespace sdl
 {
-    enum class event_return_type : std::uint8_t
-    {
-        CONTINUE,
-        SKIP,
-        FAILURE,
-        SUCCESS,
-    };
-
-    using event = SDL_Event;
-    using event_signature
-        = std::function<event_return_type(const event &, renderer &)>;
+    using event           = SDL_Event;
+    using event_signature = std::function<void(const event &)>;
 
     class event_handler
     {
     public:
-        using signal_t = signal<event_return_type, const event &, renderer &>;
+        using signal_t = signal<void, const event &>;
 
         event_handler()  = default;
         ~event_handler() = default;
@@ -37,79 +27,57 @@ namespace sdl
         auto
         connect(SDL_EventType type, T_Args &&...args) -> connection
         {
-            std::scoped_lock lock { m_mutex };
-
             return m_signals[std::to_underlying(type)].connect(
                 std::forward<T_Args>(args)...);
         }
 
 
-        auto
-        handle_event(const event &e, sdl::renderer &render) -> event_return_type
+        void
+        handle_event(const event &e)
         {
-            std::scoped_lock lock { m_mutex };
-
-            if (e.type == SDL_EVENT_QUIT) return event_return_type::SUCCESS;
-
             auto it { m_signals.find(e.type) };
-            if (it == m_signals.end()) return event_return_type::CONTINUE;
+            if (it == m_signals.end()) return;
 
             auto &sig { it->second };
 
-            for (auto &slot : sig.get_slots())
-            {
-                event_return_type r { slot.slot(e, render) };
-
-                if (r == event_return_type::FAILURE)
-                    return event_return_type::FAILURE;
-
-                if (r == event_return_type::SUCCESS)
-                    return event_return_type::SUCCESS;
-
-                if (r == event_return_type::SKIP)
-                    return event_return_type::CONTINUE;
-            }
-
-            return event_return_type::CONTINUE;
+            for (auto &slot : sig.get_slots()) slot.slot(e);
         }
 
 
-        auto
-        poll(sdl::renderer &render) -> event_return_type
+        void
+        poll(sdl::renderer &render)
         {
             event e;
             while (SDL_PollEvent(&e))
             {
-                SDL_ConvertEventToRenderCoordinates(render.raw(), &e);
-
-                event_return_type res { handle_event(e, render) };
-
-                switch (res)
+                if (e.type == SDL_EVENT_QUIT)
                 {
-                case event_return_type::SKIP:     [[fallthrough]];
-                case event_return_type::CONTINUE: continue; ;
-                case event_return_type::FAILURE:
-                    return event_return_type::FAILURE;
-                case event_return_type::SUCCESS:
-                    return event_return_type::SUCCESS;
-                };
-            }
+                    m_should_exit = true;
+                    return;
+                }
 
-            return event_return_type::CONTINUE;
+                SDL_ConvertEventToRenderCoordinates(render, &e);
+                handle_event(e);
+            }
         }
 
 
         void
         clear()
         {
-            std::scoped_lock lock { m_mutex };
             m_signals.clear();
         }
 
-    private:
-        std::mutex                                  m_mutex;
-        std::unordered_map<std::uint32_t, signal_t> m_signals;
 
-        std::vector<signal_t::slot_type *> m_run_next_slots;
+        [[nodiscard]]
+        auto
+        should_exit() const noexcept -> bool
+        {
+            return m_should_exit;
+        }
+
+    private:
+        std::unordered_map<std::uint32_t, signal_t> m_signals;
+        bool                                        m_should_exit { false };
     };
 }

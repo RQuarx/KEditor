@@ -1,74 +1,56 @@
 #pragma once
-#include "widgets/clickable.hh"
-#include "widgets/frame.hh"
-#include "widgets/label.hh"
+#include "sdl/context.hh"
 
 
 namespace widget
 {
-    class button final : public frame
+    namespace config
     {
-    public:
-        button(sdl::frect                        rect,
-               const std::shared_ptr<sdl::font> &font   = {},
-               std::string                       string = {});
+        inline struct button_config
+        {
+            sdl::color base_color { 0x2A4A7B8A_rgba };
+            sdl::color hover_color { 0x4396FA66_rgba };
+            sdl::color clicked_color { 0x4396FAB0_rgba };
 
-        auto add_event_callbacks(sdl::event_handler &handler) noexcept
-            -> button & override;
-        auto render(sdl::renderer &render) -> frame & override;
+            sdl::color border_color { 0x6D6D8080_rgba };
+            float      border_width { 1 };
 
-
-        [[nodiscard]]
-        auto signal_clicked() noexcept -> sdl::signal<void> &;
-
-
-        auto set_font(const std::shared_ptr<sdl::font> &font) noexcept
-            -> button &;
-        auto set_string(std::string string) noexcept -> button &;
-
-        auto set_text_color(sdl::color color) noexcept -> button &;
-        auto set_hover_text_color(sdl::color color) noexcept -> button &;
-        auto set_clicked_text_color(sdl::color color) noexcept -> button &;
-        auto set_hover_color(sdl::color color) noexcept -> button &;
-        auto set_clicked_color(sdl::color color) noexcept -> button &;
-
-        auto set_fadeout_time(std::uint64_t ms) noexcept -> button &;
-        auto set_fadein_time(std::uint64_t ms) noexcept -> button &;
-
-        auto set_discard_click_time(std::uint64_t ms) noexcept -> button &;
+            std::uint64_t fadein_time_ms { 100 };
+            std::uint64_t fadeout_time_ms { 150 };
+        } button;
+    }
 
 
-        [[nodiscard]]
-        auto get_font() const noexcept -> std::shared_ptr<sdl::font>;
-        [[nodiscard]] auto get_string() const noexcept -> std::string;
-
-        [[nodiscard]] auto get_text_color() const noexcept -> sdl::color;
-        [[nodiscard]] auto get_hover_text_color() const noexcept -> sdl::color;
-        [[nodiscard]] auto get_clicked_text_color() const noexcept
-            -> sdl::color;
-        [[nodiscard]] auto get_hover_color() const noexcept -> sdl::color;
-        [[nodiscard]] auto get_clicked_color() const noexcept -> sdl::color;
-
-        [[nodiscard]] auto get_fadeout_time() const noexcept -> std::uint64_t;
-        [[nodiscard]] auto get_fadein_time() const noexcept -> std::uint64_t;
-
-        [[nodiscard]]
-        auto get_discard_click_time() const noexcept -> std::uint64_t;
-
-    private:
-        clickable            m_clickable;
-        std::optional<label> m_label;
-
-        sdl::color m_hover_text_color { 0xffffff_rgb };
-        sdl::color m_clicked_text_color { 0xffffff_rgb };
-
-        sdl::signal<void> m_signal_clicked;
-        sdl::connection   m_OC_connection;
-
-        std::uint64_t m_discard_click_ms;
-        std::uint64_t m_down_button_clicked_ms;
-
-
-        void mf_on_click(clickable::click_type type);
+    enum class button_result : std::uint8_t
+    {
+        none    = 0,
+        hover   = 1 << 0,
+        clicked = 1 << 1,
     };
+
+
+    enum class fade_state : std::uint8_t
+    {
+        none,
+        to_hover,
+        to_normal
+    };
+
+
+    struct button_state
+    {
+        fade_state fade_state;
+
+        sdl::color current_color;
+        sdl::color fade_start_color;
+        sdl::color fade_target_color;
+
+        std::uint64_t previous_frame_time;
+        float         fade_elapsed;
+
+        bool was_hot { false };
+    };
+
+
+    auto button(sdl::context &ctx, id_t id, sdl::frect rect) -> button_result;
 }
